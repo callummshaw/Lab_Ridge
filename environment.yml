@@ -6,8 +6,7 @@ dependencies:
   - numpy
   - matplotlib
   - pandas
-  - tkinter
+  - tk
   - scipy
   - cmocean
-  - os
   - cv2
