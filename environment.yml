@@ -1,0 +1,13 @@
+  
+name: environment
+channels:
+  - conda-forge
+dependencies:
+  - numpy
+  - matplotlib
+  - pandas
+  - tkinter
+  - scipy
+  - cmocean
+  - os
+  - cv2
