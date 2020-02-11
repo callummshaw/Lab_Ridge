@@ -9,4 +9,4 @@ dependencies:
   - tk
   - scipy
   - cmocean
-  - opencv-python
+
