@@ -10,3 +10,4 @@ dependencies:
   - scipy
   - cmocean
 
+export DISPLAY=:0
