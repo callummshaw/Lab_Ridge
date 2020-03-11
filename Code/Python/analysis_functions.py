@@ -104,6 +104,25 @@ def background_profile(b_image, density_locations, exp_rho, depth):
     background_data = [beta, bottom_ref, rho_ref]
     return depth_array, background_data
 
+def background_analysis(b_image, density_locations, exp_rho, depth):
+    depth_array, background_data = background_profile(b_image, density_locations, exp_rho, depth)
+    
+    rho_ref=background_data[2]
+    
+    plt.figure()
+    im=plt.imshow(rho_ref,vmin=exp_rho[0],vmax=exp_rho[1], extent=[0,depth/rho_ref.shape[0]*rho_ref.shape[1],-depth,0])
+    plt.title('Background Density')
+    plt.xlabel('Length')
+    plt.ylabel('Depth')
+    ax = plt.gca()
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    cbar=plt.colorbar(im, cax=cax)
+    cbar.set_label(r'Density (kg m$^{-3}$)', rotation=90)
+    cbar.ax.invert_yaxis()
+    
+    return depth_array, background_data
+
 def foreground_profile(what, foreground_path, background_data, density_locations, path, run):
     '''
     
@@ -141,10 +160,10 @@ def foreground_profile(what, foreground_path, background_data, density_locations
     
     #the save only option (no plotting)
     if what == 1:
-        
+        crop_points=600 #how much you want to crop in vertical
         y,x=rho_ref.shape
-        density_abs = np.zeros((no_images,y,x))
-        
+        density_abs = np.zeros((no_images,crop_points,x))
+        #only taking the crop_points closest to the top to save
         for i in range(no_images):
 
             f_image=cv2.imread(foreground_path[i],0)
@@ -156,7 +175,7 @@ def foreground_profile(what, foreground_path, background_data, density_locations
             density = rho_bottom+np.float64(beta*(absorbtion-bottom_ref))
             
             #putting density data into array
-            density_abs[i]=density
+            density_abs[i]=density[:crop_points,:][::-1]  #cropping and flipping data
         
         np.savez('{}/results/data'.format(os.path.dirname(foreground_path[0])),density_abs=density_abs, background_data=background_data)
     #plotting anom
@@ -213,7 +232,7 @@ def foreground_profile(what, foreground_path, background_data, density_locations
         
         writer = animation.writers['ffmpeg']
         save_name = 'run_{}_anomaly'.format(run)
-        ani.save('{}/densityfields/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
+        ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
     #plotting abs    
     if what == 3:
         ims=[]
@@ -276,4 +295,4 @@ def foreground_profile(what, foreground_path, background_data, density_locations
         
         writer = animation.writers['ffmpeg']
         save_name = 'run_{}_abs'.format(run)
-        ani.save('{}/densityfields/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
+        ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
