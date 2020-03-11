@@ -1,5 +1,5 @@
 # Lab Ridge
-![Density Anomaly](Pictures/run_21.PNG)
+![Density Anomaly](Pictures/thecapture.PNG)
 
 This a repository of Python code for analysing lab work with a moving ridge conducted in 2019-2020 at ANU. There are currently a few Jupyter notebooks uploaded. The first- 'Main Routine' is for visualising, long term density vartions caused by the ridge. 
 
