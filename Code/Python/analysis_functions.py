@@ -296,3 +296,195 @@ def foreground_profile(what, foreground_path, background_data, density_locations
         writer = animation.writers['ffmpeg']
         save_name = 'run_{}_abs'.format(run)
         ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
+
+def topo_locator(density_abs,rho_bottom):
+    '''
+    
+
+    Parameters
+    ----------
+    density_abs : Dataset that has all the images that we will run over
+    rho_bottom : Max rho from experiment (used to determine the topography)
+
+    Returns
+    -------
+    topo_location : An array that has the average location (X Pixel) of tip of topography for each image in dataset
+
+    '''
+    
+    t,y,x=density_abs.shape
+    topo_location=np.zeros(t)
+    
+    density_abs[density_abs>rho_bottom-3]=np.nan #setting topo to nan
+    
+    for i in range(t):
+        image=density_abs[i]
+        
+        nan_count=np.float32(np.sum(np.isnan(image),axis=0)) #summing the Nans in the vertical direction
+        nan_count[nan_count<336]=np.nan #removing everything but the top of the hill
+        nan_count=nan_count*0+1
+        nan_count=nan_count*np.arange(x) #creating an array where the value is the index
+    
+        max_loc = np.nanmean(nan_count) #finding the average index of top of the hill
+        topo_location[i]=max_loc
+    
+    plt.figure(figsize=(10,5))
+    plt.plot(topo_location,color='b')
+    plt.title('Topography Location')
+    plt.xlabel('Image Number')
+    plt.ylabel('Topography Location (Pixel)')
+    
+    return topo_location
+
+def crop_centre(i, topo_location, field, rho_ref):
+    '''
+    
+
+    Parameters
+    ----------
+    i: if I = 1 or 2 then returns abs density if rho =3 then returns anom 
+    topo_location : An array that has the average location (X Pixel) of tip of topography for each image in dataset
+    field : Dataset that we are cropping (either density abs or density anom)
+    rho_ref : Dataset that that has the background density
+
+    Returns
+    -------
+    cropped_abs : The cropped abs with the topography stationairy 
+    cropped_anom : The cropped anom with the topography stationairy
+
+    '''
+
+    t,y,x=field.shape
+    
+    right = int(x-max(topo_location))
+    left = int(min(topo_location))    
+    
+    cropped_field = np.zeros((t,y,right+left))
+    
+    if i == 1 or 2:
+        
+        for j in range(t):
+            topo=int(topo_location[j])
+            
+            image=field[j]
+            
+            cropped_image=image[:,int(topo-left):int(topo+right)]
+            
+            
+            cropped_field[j]=cropped_image
+        
+        return cropped_field
+    
+    elif i ==3:
+        for j in range(t):
+            topo=int(topo_location[j])
+            
+            image=field[j]
+            
+            cropped_image=image[:,int(topo-left):int(topo+right)]
+            cropped_ref=rho_ref[:600,int(topo-left):int(topo+right)]
+            
+            cropped_field[j]=cropped_image-cropped_ref
+            
+        return cropped_field
+
+    
+
+def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
+    
+    #saving data
+    if i == 1:
+        
+        centre_rho = crop_centre(i,topo_location,field, rho_ref)
+        np.savez('{}/centre_data'.format(os.path.dirname(data_path)),centre_rho=centre_rho)
+        
+    if i == 2:
+        centre_rho = crop_centre(i,topo_location,field, rho_ref)
+        
+        ims=[]
+        fig = plt.figure(figsize=(10,5))
+        
+        t,y,x=centre_rho.shape
+        
+        for i in range(t):
+            
+            image=centre_rho[i]
+            
+            cmap = cmo.cm.dense
+            vmin=rho_top-1
+            vmax=rho_top+3
+                
+        
+            im=plt.imshow(image, cmap=cmap, animated=True, vmin=vmin,vmax=vmax)
+            title = 'Run {}- Density'.format(run)
+            plt.title(title, fontsize=20)
+            
+            plt.xlabel('Length (m)')
+            plt.ylabel('Depth (m)')
+            
+            ims.append([im])
+        
+                
+        ani = animation.ArtistAnimation(fig, ims, interval=125, blit=True,
+                                        repeat_delay=1000)
+        
+        ax = plt.gca()
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        cbar=plt.colorbar(im, cax=cax)
+        cbar.set_label(r'Density (kg m$^{-3}$)', rotation=90)
+        
+        
+        print('Saving!')
+        
+        writer = animation.writers['ffmpeg']
+        save_name = 'run_{}_abs_centre'.format(run)
+        ani.save('{}/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
+    
+    if i == 3:
+        centre_anom = crop_centre(i,topo_location,field, rho_ref)
+        
+        ims=[]
+        fig = plt.figure(figsize=(10,5))
+        
+        t,y,x=centre_anom.shape
+        
+        for i in range(t):
+            
+            image=centre_anom[i][::-1]
+            
+            cmap = cmo.cm.balance
+            vmin=-2
+            vmax=-vmin
+                
+            density_filt=cv2.medianBlur(np.float32(image),3)
+                
+        
+            im=plt.imshow(density_filt, cmap=cmap, animated=True, vmin=vmin,vmax=vmax)
+            title = 'Run {}- Density Anomaly'.format(run)
+            plt.title(title, fontsize=20)
+            
+            plt.xlabel('Length (m)')
+            plt.ylabel('Depth (m)')
+            
+            ims.append([im])
+                
+                
+        ani = animation.ArtistAnimation(fig, ims, interval=125, blit=True,
+                                        repeat_delay=1000)
+        
+        
+        ax = plt.gca()
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        cbar=plt.colorbar(im, cax=cax)
+        cbar.set_label(r'Density (kg m$^{-3}$)', rotation=90)
+        
+        
+        print('Saving!')
+        
+        writer = animation.writers['ffmpeg']
+        save_name = 'run_{}_anomaly_centre'.format(run)
+        ani.save('{}/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
+                    
+                    
