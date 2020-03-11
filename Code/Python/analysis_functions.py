@@ -361,7 +361,8 @@ def crop_centre(i, topo_location, field, rho_ref):
     
     cropped_field = np.zeros((t,y,right+left))
     
-    if i == 1 or 2:
+    
+    if i ==1 or 1 ==2:
         
         for j in range(t):
             topo=int(topo_location[j])
@@ -375,7 +376,8 @@ def crop_centre(i, topo_location, field, rho_ref):
         
         return cropped_field
     
-    elif i ==3:
+    elif i == 3:
+        
         for j in range(t):
             topo=int(topo_location[j])
             
@@ -384,7 +386,8 @@ def crop_centre(i, topo_location, field, rho_ref):
             cropped_image=image[:,int(topo-left):int(topo+right)]
             cropped_ref=rho_ref[:600,int(topo-left):int(topo+right)]
             
-            cropped_field[j]=cropped_image-cropped_ref
+            delta=cropped_image-cropped_ref
+            cropped_field[j] = delta
             
         return cropped_field
 
@@ -451,7 +454,7 @@ def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
         
         for i in range(t):
             
-            image=centre_anom[i][::-1]
+            image=centre_anom[i]
             
             cmap = cmo.cm.balance
             vmin=-2
