@@ -362,7 +362,7 @@ def crop_centre(i, topo_location, field, rho_ref):
     cropped_field = np.zeros((t,y,right+left))
     
     
-    if i ==1 or 1 ==2:
+    if i ==1 or i == 2:
         
         for j in range(t):
             topo=int(topo_location[j])
