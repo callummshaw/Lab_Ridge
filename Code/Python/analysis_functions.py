@@ -129,7 +129,7 @@ def foreground_profile(what, foreground_path, background_data, density_locations
 
     Parameters
     ----------
-    what : If = 1, then will only save animation, =2 then will make anom vid, if =3 then will make abs vid
+    what : If = 1, then will only save animation, =2 then will make abs vid, if =3 then will make anom vid
     foreground_path : Location of all the foreground pictures
     background_data : Produced by background profile, contains beta, bottom_ref and rho_ref
     density_locations : Top and bottom of water column
@@ -179,7 +179,7 @@ def foreground_profile(what, foreground_path, background_data, density_locations
         
         np.savez('{}/results/data'.format(os.path.dirname(foreground_path[0])),density_abs=density_abs, background_data=background_data)
     #plotting anom
-    if what == 2:
+    if what == 3:
         ims=[]
         fig = plt.figure(figsize=(10,5))
         for i in range(no_images):
@@ -234,7 +234,7 @@ def foreground_profile(what, foreground_path, background_data, density_locations
         save_name = 'run_{}_anomaly'.format(run)
         ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
     #plotting abs    
-    if what == 3:
+    if what == 2:
         ims=[]
         fig = plt.figure(figsize=(10,5))
         
