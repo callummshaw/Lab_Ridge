@@ -3,6 +3,8 @@
 Created on Wed Mar 11 08:49:14 2020
 
 @author: Callum Shaw
+
+This is module that contains all the functions needed for the lab ridge analysis
 """
 
 import numpy as np
@@ -11,7 +13,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os.path
 import cv2
-from matplotlib import rc
 
 import matplotlib.animation as animation
 import cmocean as cmo

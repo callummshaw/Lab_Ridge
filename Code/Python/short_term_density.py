@@ -3,6 +3,11 @@
 Created on Wed Mar 11 09:51:28 2020
 
 @author: Callum Shaw
+
+The following code is used to visualise density varitions from photographs of 
+a moving ridge in the lab. The code firstly takes a background photograph, 
+finds the density profile then compares said profile to photographs taken of the 
+moving ridge.
 """
 
 import cv2
