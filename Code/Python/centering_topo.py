@@ -10,7 +10,6 @@ in order to find the locations in x where the topography is 'most present'. I fi
 maximal Nan area and then crop the flow fields to keep the topography in the same spot.
 """
 import numpy as np
-import matplotlib.pyplot as plt
 from tkinter.filedialog import askopenfilename
 import analysis_functions as af
 
