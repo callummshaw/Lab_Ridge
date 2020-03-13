@@ -456,8 +456,9 @@ def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
         
         t,y,x=centre_anom.shape
         
-        vmin=np.min(centre_anom[1])
+        vmin=np.nanmin(centre_anom[0])
         vmax=-vmin
+        
         
         for i in range(t):
             
