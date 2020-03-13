@@ -324,7 +324,8 @@ def topo_locator(density_abs,rho_bottom):
         image=density_abs[i]
         
         nan_count=np.float32(np.sum(np.isnan(image),axis=0)) #summing the Nans in the vertical direction
-        nan_count[nan_count<336]=np.nan #removing everything but the top of the hill
+        max_nan =  np.max((np.sum(np.isnan(image),axis=0)))
+        nan_count[nan_count<max_nan-5]=np.nan #removing everything but the top of the hill
         nan_count=nan_count*0+1
         nan_count=nan_count*np.arange(x) #creating an array where the value is the index
     
@@ -417,8 +418,8 @@ def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
             image=centre_rho[i]
             
             cmap = cmo.cm.dense
-            vmin=rho_top-1
-            vmax=rho_top+3
+            vmin=rho_top
+            vmax=rho_top+4
                 
         
             im=plt.imshow(image, cmap=cmap, animated=True, vmin=vmin,vmax=vmax)
@@ -455,16 +456,18 @@ def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
         
         t,y,x=centre_anom.shape
         
+        vmin=-np.min(centre_anom[1])
+        vmax=-vmin
+        
         for i in range(t):
             
             image=centre_anom[i]
             
             cmap = cmo.cm.balance
-            vmin=-2
-            vmax=-vmin
+            
                 
             density_filt=cv2.medianBlur(np.float32(image),3)
-                
+
         
             im=plt.imshow(density_filt, cmap=cmap, animated=True, vmin=vmin,vmax=vmax)
             title = 'Run {}- Density Anomaly'.format(run)

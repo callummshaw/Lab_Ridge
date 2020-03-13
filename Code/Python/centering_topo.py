@@ -33,9 +33,9 @@ rho_ref=background_data[2]
 rho_bottom=exp_rho[0]
 rho_top=exp_rho[1]
 
-topo_location = af.topo_locator(density_abs, rho_bottom)
+#topo_location = af.topo_locator(density_abs, rho_bottom)
 #check that the image produced matches what you expect it to be
-
+topo_location=af.topo_locator(density_abs,rho_bottom)
 def centre_analysis(i):
     #1 for saving data, 2 for anom vid and 3 for abs vid
     af.centred_field(i, topo_location, density_abs, rho_ref, rho_top, run, data_path)
