@@ -148,7 +148,9 @@ def foreground_profile(what, foreground_path, background_data, density_locations
     rho_top=exp_rho[1]
     
     no_images = len(foreground_path)
-    os.mkdir('{}/results'.format(os.path.dirname(foreground_path[0])))
+    
+    if not os.path.exists('{}/results'.format(os.path.dirname(foreground_path[0]))):
+        os.makedirs('{}/results'.format(os.path.dirname(foreground_path[0])))
     
     zbot=int(np.round(density_locations[0][1]))
     ztop=int(np.round(density_locations[1][1]))

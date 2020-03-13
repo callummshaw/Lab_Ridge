@@ -9,3 +9,14 @@ This code uses the density fields in the ridge frame of reference (produced by
 continuity equations. 
 """
 
+import numpy as np
+import matplotlib.pyplot as plt
+import concurrent.futures
+
+
+data_path='E:/batch 2/3echo/run8/transit/results/data.npz'
+data = np.load(data_path, allow_pickle=True)
+
+
+
+def topograghy()
