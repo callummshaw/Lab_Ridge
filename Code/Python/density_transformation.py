@@ -5,12 +5,13 @@ Created on Thu Mar 12 11:59:40 2020
 @author: Callum Shaw
 
 This code uses the density fields in the ridge frame of reference (produced by
-'centering_topo.py') and finds the the velocity field using the buoyancy and
-continuity equations. 
+'centering_topo.py') and removes the topography through a transformation 
+and then fills in the nans with interpolation to get the data ready for fourier
+filtering. The interpolation is very slow and has been speed up partially with 
+parallel processing
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import analysis_functions as af
 from multiprocessing import Pool
 from scipy import interpolate 
@@ -30,7 +31,22 @@ rho_c = rho[:,:-(min_nan+offset),:]
 
   
 def transformation(data, no_hills=1, lensing=33):
-   
+    '''
+    This function transforms data to remove the topography, this is done by
+    creating z'. The removal of topography allows for fourier filtering
+
+    Parameters
+    ----------
+    data : Dataset we want to transform
+    no_hills : the number of hills in the data, defualt is 1
+    lensing : a fudge factor to overcome some lensing that occurs around the hiil
+                the default is 33.
+
+    Returns
+    -------
+     The transformed dataset 
+
+    '''   
     t,z,x=data.shape
     topo_function = af.topograghy_mask(data, no_hills, lensing)
     
@@ -67,6 +83,19 @@ transformed_data = transformation(rho_c)
 
 
 def interp_nan(time):
+    '''
+    This function interpolates the transformed data to remove the nans. 
+    Interpolation is very slow so it is set up to be parallelised.
+
+    Parameters
+    ----------
+    time : reads in time which we are iterating ovrt
+
+    Returns
+    -------
+    interp : interped data set
+
+    '''
     data = transformed_data
     t,z,x=data.shape
     
