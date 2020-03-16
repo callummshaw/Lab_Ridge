@@ -300,6 +300,35 @@ def foreground_profile(what, foreground_path, background_data, density_locations
         save_name = 'run_{}_abs'.format(run)
         ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
 
+def max_and_loc(data):
+    '''
+    Simple function that finds the maximum height of topo and the location of
+    the maximum. It takes an average of values from around the max, to avoid
+    the problem of the maximum shifting frame to frame
+
+    Parameters
+    ----------
+    data : data set that we want to find the topography
+
+    Returns
+    -------
+    max_amp : The maximum height of the topography
+    max_loc : The location (in x) of the topography
+
+    '''
+    y,x = data.shape
+    
+    nan_array = np.sum(np.isnan(data),axis=0)
+    max_amp = np.max(nan_array)
+    nan_array = np.float32(nan_array) #need to convert from int to float
+    nan_array[nan_array<max_amp-5]=np.nan #removing everything but the top of the hill
+        
+    nan_count=nan_array*0+1
+    nan_count=nan_count*np.arange(x) #creating an array where the value is the index
+    max_loc = np.nanmean(nan_count) #finding the average index of top of the hill
+    
+    return max_amp, max_loc
+
 def topo_locator(density_abs,rho_bottom):
     '''
     
