@@ -526,7 +526,7 @@ def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
         save_name = 'run_{}_anomaly_centre'.format(run)
         ani.save('{}/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
                     
-def topograghy_mask(rho, no_hills, lensing):
+def topograghy_mask(rho, no_hills=1, lensing=33):
     '''
     A function that reads in a dataset and returns a function that can be used to mask
     the topography (needed for fourier transform)

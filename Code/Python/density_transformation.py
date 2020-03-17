@@ -15,6 +15,8 @@ import numpy as np
 import analysis_functions as af
 from multiprocessing import Pool
 from scipy import interpolate 
+import os
+import time
 
 data_path='E:/batch 2/3echo/run8/transit/results/centre_data.npz'
 data = np.load(data_path)
@@ -66,7 +68,7 @@ def transformation(data, no_hills=1, lensing=33):
     for k in range(t):
         rho_data=data[k,:,:]
         if k%100 == 0:
-            print('{} done Images!'.format(k))
+            print('{} Images Transformed!'.format(k))
         for i in range(x):
             for j in range(z):
                 wanted_data=rho_data[j,i]
@@ -80,50 +82,52 @@ def transformation(data, no_hills=1, lensing=33):
     return transformed
 
 transformed_data = transformation(rho_c)
+np.savez('test_data',transformed_data=transformed_data)
+print('Now Interpolating Images!')
 
+# def interp_nan(i):
+#     '''
+#     This function interpolates the transformed data to remove the nans. 
+#     Interpolation is very slow so it is set up to be parallelised.
 
-def interp_nan(time):
-    '''
-    This function interpolates the transformed data to remove the nans. 
-    Interpolation is very slow so it is set up to be parallelised.
+#     Parameters
+#     ----------
+#     time : reads in time which we are iterating ovrt
 
-    Parameters
-    ----------
-    time : reads in time which we are iterating ovrt
+#     Returns
+#     -------
+#     interp : interped data set
 
-    Returns
-    -------
-    interp : interped data set
-
-    '''
-    data = transformed_data
-    t,z,x=data.shape
+#     '''
+#     data = transformed_data
+#     t,z,x=data.shape
     
-    #creating a meshgrid of pixel locations
-    x_array = np.arange(x)
-    z_array = np.arange(z)
-    xx,zz=np.meshgrid(x_array,z_array)
+#     #creating a meshgrid of pixel locations
+#     x_array = np.arange(x)
+#     z_array = np.arange(z)
+#     xx,zz=np.meshgrid(x_array,z_array)
     
     
-    array = np.ma.masked_invalid(data[time])
-    x1=xx[~array.mask]
-    z1=zz[~array.mask]
-    newarr=array[~array.mask]
+#     array = np.ma.masked_invalid(data[i])
+#     x1=xx[~array.mask]
+#     z1=zz[~array.mask]
+#     newarr=array[~array.mask]
 
-    interp = interpolate.griddata((x1, z1), newarr.ravel(),(xx, zz), method='cubic')
-    return interp
+#     interp = interpolate.interpn((x1, z1), newarr.ravel(),(xx, zz), method='linear')
+#     return interp
  
 
 
-if __name__ == '__main__':
-   
-    numbers=np.arange(transformed_data.shape[0])
-    p=Pool()
-    result = p.map(interp_nan, numbers)
-    p.close()
-    p.join()
+# if __name__ == '__main__':
+#     start = time.time()
+#     numbers=np.arange(1)
+#     p=Pool()
+#     result = p.map(interp_nan, numbers)
+#     p.close()
+#     p.join()
+#     print(time.time()-start)
+# # print('Now Saving Data!')
 
- 
-np.savez('transformation_result',result=result)
+# np.savez('{}/transformation_result'.format(os.path.dirname(data_path)),result=result)
 
 
