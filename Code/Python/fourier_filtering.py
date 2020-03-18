@@ -12,5 +12,5 @@ data_path = 'D:/batch 2/3echo/run8/transit/results/transformation_result.npz'
 data = np.load(data_path)
 
 t_data = data['result']
-t_data = np.dstack(t_data)
+
 #t_data = t_data[:,1:-1,1:-1] #removing boundary nans
