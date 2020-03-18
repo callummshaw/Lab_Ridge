@@ -16,20 +16,37 @@ data = np.load(data_path)
 t_data = data['result']
 t_data = np.moveaxis(t_data,2,0) #move time to first axis like rest of data
 data = t_data[:,1:-1,1:-1] #removing boundary nans
-
-#filter:
-mu=0
-sigma=.1
-
 t,z,x = data.shape
+#filter:
+def low_pass_filter(z,x,sigma=0.1,mu=0):
+    '''
+    Simple function that generates a low pass filter (using a gaussian)
 
-x_fft = np.fft.fftfreq(x)
-z_fft = np.fft.fftfreq(z)
+    Parameters
+    ----------
+    z : height of array
+    y : length of array
+    sigma : As this uses a guassian filter sigma is width of gaussian which
+            coresponds to the strength of filter. The default is 0.1.
+    mu : The mean of the gaussian. The default is 0.
 
-x_filt =np.exp(-(x_fft-mu)**2/(2*sigma**2))
-z_filt =np.exp(-(z_fft-mu)**2/(2*sigma**2))
+    Returns
+    -------
+    filt : Returns a 2d array containing the low pass filter
 
-filt = x_filt*z_filt[:,None]
+    '''
+
+    x_fft = np.fft.fftfreq(x)
+    z_fft = np.fft.fftfreq(z)
+
+    x_filt =np.exp(-(x_fft-mu)**2/(2*sigma**2))
+    z_filt =np.exp(-(z_fft-mu)**2/(2*sigma**2))
+
+    filt = x_filt*z_filt[:,None]
+    
+    return filt
+
+filt = low_pass_filter(z, x)
 
 def fourier_filter(i):
     '''
@@ -71,3 +88,5 @@ result = np.moveaxis(result,2,0)
 et = time.time()
 tt=et-st
 print(f'This process took {tt} seconds')
+
+np.savez('{}/filtered_data'.format(os.path.dirname(data_path)),result)
