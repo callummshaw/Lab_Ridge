@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
-import time
 
 def max_and_loc(data):
     '''
@@ -99,7 +98,7 @@ def topograghy_mask(rho, no_hills=1, lensing=33):
         topo_function=-max_amp_1*np.exp(-(domain-max_loc_1)**2/(2*h_m_w**2))-max_amp_2*np.exp(-(domain-max_loc_2)**2/(2*h_m_w**2))+y
          
         return topo_function
-st = time.time()
+
 data_path='D:/batch 2/3echo/run8/transit/results/centre_data.npz'
 data = np.load(data_path)
 
@@ -161,6 +160,5 @@ if __name__ == '__main__':
       p.join()
 
 result=np.dstack(result)
-et = time.time()
-print(et-st)
+
 np.savez('{}/transformation_result'.format(os.path.dirname(data_path)),result=result)

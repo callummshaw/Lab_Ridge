@@ -7,9 +7,8 @@ Created on Tue Mar 17 10:06:42 2020
 
 import numpy as np
 import analysis_functions as af
-from multiprocessing import Pool
 
-data_path = 'E:/batch 2/3echo/run8/transit/results/transformation_result.npz'
+data_path = 'D:/batch 2/3echo/run8/transit/results/transformation_result.npz'
 data = np.load(data_path)
 
 t_data = data['result']
