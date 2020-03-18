@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os.path
 import cv2
-
 import matplotlib.animation as animation
 import cmocean as cmo
 
