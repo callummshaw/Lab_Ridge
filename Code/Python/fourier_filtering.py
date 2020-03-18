@@ -45,5 +45,5 @@ def fourier_filter(data,sigma=.1):
     filtered_data = fft_data*filt #filtering
     ifft_data = fft.ifft2(filtered_data) #going back to cartesian space
     
-    return ifft_data.real
+    return np.float32(ifft_data.real)
 
