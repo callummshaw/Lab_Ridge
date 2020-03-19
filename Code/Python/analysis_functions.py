@@ -15,7 +15,7 @@ import os.path
 import cv2
 import matplotlib.animation as animation
 import cmocean as cmo
-
+import sys
 
 def index_find(depths,click):
     '''
@@ -327,6 +327,7 @@ def max_and_loc(data):
     max_loc = np.nanmean(nan_count) #finding the average index of top of the hill
     
     return max_amp, max_loc
+                    
 
 def topo_locator(density_abs,rho_bottom):
     '''
@@ -590,3 +591,57 @@ def topograghy_mask(rho, no_hills=1, lensing=33):
         topo_function=-max_amp_1*np.exp(-(domain-max_loc_1)**2/(2*h_m_w**2))-max_amp_2*np.exp(-(domain-max_loc_2)**2/(2*h_m_w**2))+y
          
         return topo_function
+
+def transformed_coords(data_path, bottom_offset=15, return_dataset='yes'):
+    '''
+    A function that calculates the transformed coordinates needed to mask the 
+    the topography
+
+    Parameters
+    ----------
+    data_path : Path to the data that is being transformed
+    bottom_offset : The amount of datapoints that you want to remove from
+                    bottom of the dataset. The default is 15.
+    dataset: if the function will return the cropped dataset (with the bottom 
+             part removed). The default is yes, if not desired then 'no'
+
+    Returns
+    -------
+    zt : The transformed array, that contains the z' coordinates
+    rho_c : The cropped dataset
+
+    '''
+    print(f'Return Bottom Cropped Dataset = {return_dataset}')
+    if return_dataset not in {'yes', 'no'}:
+        print('Return Dataset must be either yes or no, please rerun')
+        sys.exit(1)
+         
+    data = np.load(data_path)
+
+    rho = data['centre_rho']
+    #remving nans at base
+    min_nan=np.min(np.sum(np.isnan(rho[0]),axis=0)) #summing the Nans in the vertical direction
+    
+    rho_c = rho[:,:-(min_nan+bottom_offset),:]
+    
+    topo_function = topograghy_mask(rho_c) #finding the topography shape
+    
+    t,z,x=rho_c.shape
+    
+    #creating data used in transform
+    x_array = np.arange(x)
+    z_array = np.arange(z)
+    xx,zz=np.meshgrid(x_array,z_array)
+    
+    zt=np.zeros((z,x)) #where we are storing the transformed z coordinate
+    
+    for i in range(x):
+        topo=topo_function[i]
+        transformed_array=z*(zz[:,i]-topo)/(-topo) #function
+        zt[:,i]=-np.round(transformed_array)+z
+    
+    if return_dataset  == 'yes':
+        return zt, rho_c
+    
+    if return_dataset  == 'no':
+        return zt

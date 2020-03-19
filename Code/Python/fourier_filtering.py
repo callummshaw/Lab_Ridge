@@ -90,4 +90,4 @@ et = time.time()
 tt=et-st
 print(f'This process took {tt} seconds')
 
-np.savez('{}/filtered_data'.format(os.path.dirname(data_path)),result)
+np.save('{}/filtered_data'.format(os.path.dirname(data_path)),result)
