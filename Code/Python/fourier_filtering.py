@@ -4,13 +4,14 @@ Created on Tue Mar 17 10:06:42 2020
 
 @author: Callum Shaw
 """
+import os
 from numpy import fft
 import numpy as np
 from multiprocessing.pool import ThreadPool as Pool
 import time
 #import analysis_functions as af
 st = time.time()
-data_path = 'D:/batch 2/3echo/run8/transit/results/transformation_result.npz'
+data_path = 'E:/batch 2/3echo/run8/transit/results/transformation_result.npz'
 data = np.load(data_path)
 
 t_data = data['result']
