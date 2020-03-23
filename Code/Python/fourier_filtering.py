@@ -47,7 +47,7 @@ def low_pass_filter(z,x,sigma=0.1,mu=0):
     
     return filt
 
-filt = low_pass_filter(z, x, sigma=.01)
+filt = low_pass_filter(z, x, sigma=.005)
 
 def fourier_filter(i):
     '''
