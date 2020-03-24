@@ -182,10 +182,10 @@ def foreground_profile(foreground_path, background_data, density_locations, path
         #putting density data into array
         density_abs[i]=density[:crop_points,:][::-1]  #cropping and flipping data
       
-    print ('Done Analysing Images!')     
+    print ('\n Done Analysing Images!')     
     #plotting anom
     if moving_anom == 'yes':
-        print('Making Anomaly Animation')
+        print('\n Making Anomaly Animation')
         ims=[]
         fig = plt.figure(figsize=(10,5))
         for i in range(no_images):
@@ -243,7 +243,7 @@ def foreground_profile(foreground_path, background_data, density_locations, path
         ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
     #plotting abs    
     if moving_abs == 'yes':
-        print('Making Abseloute Animation')
+        print('\n Making Abseloute Animation')
         ims=[]
         fig = plt.figure(figsize=(10,5))
         
@@ -375,6 +375,7 @@ def topo_locator(density_abs,rho_bottom):
     plt.title('Topography Location')
     plt.xlabel('Image Number')
     plt.ylabel('Topography Location (Pixel)')
+    plt.pause(3)
     
     return topo_location
 
@@ -436,14 +437,14 @@ def crop_centre(topo_location, field, rho_ref, anom ='no'):
 
 def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, fixed_anom, fixed_abs):
     
-
     centre_rho = crop_centre(topo_location, field, rho_ref)
 
     if not os.path.exists('{}/results'.format(os.path.dirname(data_path))):
         os.makedirs('{}/results'.format(os.path.dirname(data_path)))
-        
+    
+
     if fixed_abs == 'yes':
-        print('Making Abseloute Animation')
+        print('\n Making Abseloute Animation')
         ims=[]
         fig = plt.figure(figsize=(10,5))
         
@@ -485,7 +486,7 @@ def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, fixed_
         ani.save('{}/results/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
     
     if fixed_anom == 'yes':
-        print('Making Anomaly Animation')
+        print('\n Making Anomaly Animation')
         centre_anom = crop_centre(topo_location,field, rho_ref, anom='yes')
         
         ims=[]
