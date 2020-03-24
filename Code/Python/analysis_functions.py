@@ -183,6 +183,7 @@ def foreground_profile(foreground_path, background_data, density_locations, path
         
     #plotting anom
     if moving_anom == 'yes':
+        print('Making Anomaly Animation')
         ims=[]
         fig = plt.figure(figsize=(10,5))
         for i in range(no_images):
@@ -229,6 +230,8 @@ def foreground_profile(foreground_path, background_data, density_locations, path
         cbar=plt.colorbar(im, cax=cax)
         cbar.set_label(r'Density (kg m$^{-3}$)', rotation=90)
         
+        if i % 25 == 0:
+                print('{} of {} Images Done!'.format(i,no_images))
         
     
         print('Saving!')
@@ -238,6 +241,7 @@ def foreground_profile(foreground_path, background_data, density_locations, path
         ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
     #plotting abs    
     if moving_abs == 'yes':
+        print('Making Abseloute Animation')
         ims=[]
         fig = plt.figure(figsize=(10,5))
         
@@ -372,16 +376,16 @@ def topo_locator(density_abs,rho_bottom):
     
     return topo_location
 
-def crop_centre(i, topo_location, field, rho_ref):
+def crop_centre(topo_location, field, rho_ref, anom ='no'):
     '''
     
 
     Parameters
     ----------
-    i: if I = 1 or 2 then returns abs density if rho =3 then returns anom 
     topo_location : An array that has the average location (X Pixel) of tip of topography for each image in dataset
     field : Dataset that we are cropping (either density abs or density anom)
     rho_ref : Dataset that that has the background density
+    fixed_anom :  Generate data for anom
 
     Returns
     -------
@@ -397,8 +401,21 @@ def crop_centre(i, topo_location, field, rho_ref):
     
     cropped_field = np.zeros((t,y,right+left))
     
-    
-    if i ==1 or i == 2:
+    if anom == 'yes':
+        for j in range(t):
+            topo=int(topo_location[j])
+            
+            image=field[j]
+            
+            cropped_image=image[:,int(topo-left):int(topo+right)]
+            cropped_ref=rho_ref[:600,int(topo-left):int(topo+right)]
+            
+            delta=cropped_image-cropped_ref
+            cropped_field[j] = delta
+            
+        return cropped_field
+        
+    else:
         
         for j in range(t):
             topo=int(topo_location[j])
@@ -412,34 +429,17 @@ def crop_centre(i, topo_location, field, rho_ref):
         
         return cropped_field
     
-    elif i == 3:
-        
-        for j in range(t):
-            topo=int(topo_location[j])
-            
-            image=field[j]
-            
-            cropped_image=image[:,int(topo-left):int(topo+right)]
-            cropped_ref=rho_ref[:600,int(topo-left):int(topo+right)]
-            
-            delta=cropped_image-cropped_ref
-            cropped_field[j] = delta
-            
-        return cropped_field
 
     
 
-def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
+def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, fixed_anom, fixed_abs):
     
-    #saving data
-    if i == 1:
+
+    centre_rho = crop_centre(topo_location, field, rho_ref)
+
         
-        centre_rho = crop_centre(i,topo_location,field, rho_ref)
-        np.savez('{}/centre_data'.format(os.path.dirname(data_path)),centre_rho=centre_rho)
-        
-    if i == 2:
-        centre_rho = crop_centre(i,topo_location,field, rho_ref)
-        
+    if fixed_abs == 'yes':
+        print('Making Abseloute Animation')
         ims=[]
         fig = plt.figure(figsize=(10,5))
         
@@ -480,8 +480,9 @@ def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
         save_name = 'run_{}_abs_centre'.format(run)
         ani.save('{}/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
     
-    if i == 3:
-        centre_anom = crop_centre(i,topo_location,field, rho_ref)
+    if fixed_anom == 'yes':
+        print('Making Anomaly Animation')
+        centre_anom = crop_centre(topo_location,field, rho_ref, anom='yes')
         
         ims=[]
         fig = plt.figure(figsize=(10,5))
@@ -528,6 +529,8 @@ def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
         writer = animation.writers['ffmpeg']
         save_name = 'run_{}_anomaly_centre'.format(run)
         ani.save('{}/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
+    
+    return centre_rho
                     
 def topograghy_mask(rho, no_hills=1, lensing=33):
     '''
@@ -565,6 +568,7 @@ def topograghy_mask(rho, no_hills=1, lensing=33):
         max_amp = max_amp + height_increase
         
         topo_function=-max_amp*np.exp(-(domain-max_loc)**2/(2*h_m_w**2))+y
+        
         
         return topo_function
         
