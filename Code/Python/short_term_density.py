@@ -47,8 +47,6 @@ def background_analysis(excel_path, run):
 #rerun until bacground lookds right!!!!!!!!!!
 depth_array, background_data, density_locations= background_analysis(excel_path, run)
 
-
-
 # %matplotlib inline before going on!
 #now analysing the foreground images
 

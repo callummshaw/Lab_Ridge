@@ -109,6 +109,7 @@ def background_analysis(b_image, density_locations, exp_rho, depth):
     
     rho_ref=background_data[2]
     
+    
     plt.figure()
     im=plt.imshow(rho_ref,vmin=exp_rho[0],vmax=exp_rho[1], extent=[0,depth/rho_ref.shape[0]*rho_ref.shape[1],-depth,0])
     plt.title('Background Density')
@@ -120,25 +121,27 @@ def background_analysis(b_image, density_locations, exp_rho, depth):
     cbar=plt.colorbar(im, cax=cax)
     cbar.set_label(r'Density (kg m$^{-3}$)', rotation=90)
     cbar.ax.invert_yaxis()
+    plt.pause(5)
     
     return depth_array, background_data
 
-def foreground_profile(what, foreground_path, background_data, density_locations, path, run):
+def foreground_profile(foreground_path, background_data, density_locations, path, run, moving_anom = 'no', moving_abs = 'no'):
     '''
     
 
     Parameters
     ----------
-    what : If = 1, then will only save animation, =2 then will make abs vid, if =3 then will make anom vid
     foreground_path : Location of all the foreground pictures
     background_data : Produced by background profile, contains beta, bottom_ref and rho_ref
     density_locations : Top and bottom of water column
     path : path to excel doco
     run : run number
+    moving_anom :if yes will make animation. Default is no
+    moving_abs : if yes will make animation. Default is no
 
     Returns
     -------
-    None.
+    Density data
 
     '''
     exp_rho, depth = load_data(path, run)
@@ -159,29 +162,27 @@ def foreground_profile(what, foreground_path, background_data, density_locations
     bottom_ref=background_data[1]
     rho_ref=background_data[2]
     
+
+    crop_points=600 #how much you want to crop in vertical
+    y,x=rho_ref.shape
     
-    #the save only option (no plotting)
-    if what == 1:
-        crop_points=600 #how much you want to crop in vertical
-        y,x=rho_ref.shape
-        density_abs = np.zeros((no_images,crop_points,x))
-        #only taking the crop_points closest to the top to save
-        for i in range(no_images):
+    density_abs = np.zeros((no_images,crop_points,x))
+    #only taking the crop_points closest to the top to save
+    for i in range(no_images):
 
-            f_image=cv2.imread(foreground_path[i],0)
-            f_image_crop=f_image[zbot:ztop,:]
-            absorbtion = np.log(f_image_crop)
+        f_image=cv2.imread(foreground_path[i],0)
+        f_image_crop=f_image[zbot:ztop,:]
+        absorbtion = np.log(f_image_crop)
 
-            #getting rid of unwated inf_values and converting to density
-            absorbtion[np.isinf(absorbtion)]=np.nan
-            density = rho_bottom+np.float64(beta*(absorbtion-bottom_ref))
-            
-            #putting density data into array
-            density_abs[i]=density[:crop_points,:][::-1]  #cropping and flipping data
+        #getting rid of unwated inf_values and converting to density
+        absorbtion[np.isinf(absorbtion)]=np.nan
+        density = rho_bottom+np.float64(beta*(absorbtion-bottom_ref))
         
-        np.savez('{}/results/data'.format(os.path.dirname(foreground_path[0])),density_abs=density_abs, background_data=background_data)
+        #putting density data into array
+        density_abs[i]=density[:crop_points,:][::-1]  #cropping and flipping data
+        
     #plotting anom
-    if what == 3:
+    if moving_anom == 'yes':
         ims=[]
         fig = plt.figure(figsize=(10,5))
         for i in range(no_images):
@@ -236,7 +237,7 @@ def foreground_profile(what, foreground_path, background_data, density_locations
         save_name = 'run_{}_anomaly'.format(run)
         ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
     #plotting abs    
-    if what == 2:
+    if moving_abs == 'yes':
         ims=[]
         fig = plt.figure(figsize=(10,5))
         
@@ -298,6 +299,8 @@ def foreground_profile(what, foreground_path, background_data, density_locations
         writer = animation.writers['ffmpeg']
         save_name = 'run_{}_abs'.format(run)
         ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
+        
+    return density_abs
 
 def max_and_loc(data):
     '''
