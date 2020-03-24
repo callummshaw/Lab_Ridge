@@ -144,6 +144,7 @@ def foreground_profile(foreground_path, background_data, density_locations, path
     Density data
 
     '''
+    np.seterr(divide='ignore')
     exp_rho, depth = load_data(path, run)
     
     rho_bottom=exp_rho[0]
@@ -165,7 +166,7 @@ def foreground_profile(foreground_path, background_data, density_locations, path
 
     crop_points=600 #how much you want to crop in vertical
     y,x=rho_ref.shape
-    
+
     density_abs = np.zeros((no_images,crop_points,x))
     #only taking the crop_points closest to the top to save
     for i in range(no_images):
@@ -180,7 +181,8 @@ def foreground_profile(foreground_path, background_data, density_locations, path
         
         #putting density data into array
         density_abs[i]=density[:crop_points,:][::-1]  #cropping and flipping data
-        
+      
+    print ('Done Analysing Images!')     
     #plotting anom
     if moving_anom == 'yes':
         print('Making Anomaly Animation')
@@ -350,7 +352,7 @@ def topo_locator(density_abs,rho_bottom):
     topo_location : An array that has the average location (X Pixel) of tip of topography for each image in dataset
 
     '''
-    
+    np.seterr(invalid='ignore')
     t,y,x=density_abs.shape
     topo_location=np.zeros(t)
     
@@ -437,6 +439,8 @@ def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, fixed_
 
     centre_rho = crop_centre(topo_location, field, rho_ref)
 
+    if not os.path.exists('{}/results'.format(os.path.dirname(data_path))):
+        os.makedirs('{}/results'.format(os.path.dirname(data_path)))
         
     if fixed_abs == 'yes':
         print('Making Abseloute Animation')
@@ -478,7 +482,7 @@ def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, fixed_
         
         writer = animation.writers['ffmpeg']
         save_name = 'run_{}_abs_centre'.format(run)
-        ani.save('{}/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
+        ani.save('{}/results/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
     
     if fixed_anom == 'yes':
         print('Making Anomaly Animation')
@@ -528,7 +532,7 @@ def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, fixed_
         
         writer = animation.writers['ffmpeg']
         save_name = 'run_{}_anomaly_centre'.format(run)
-        ani.save('{}/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
+        ani.save('{}/results/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
     
     return centre_rho
                     

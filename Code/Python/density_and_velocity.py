@@ -12,10 +12,11 @@ import matplotlib.pyplot as plt
 from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import askopenfilenames
 import time 
+import numpy as np
 #Doing everything in one--- choose yes or no for each animation that you want:
 
-moving_anom = 'yes'
-moving_abs = 'yes'
+moving_anom = 'no'
+moving_abs = 'no'
 
 fixed_anom = 'yes' #density fields with topography fixed in centre of domain
 fixed_abs = 'yes'
@@ -55,7 +56,18 @@ def light_attenuation_analysis(run, excel_path, moving_anom = 'no', moving_abs =
     print('Select Foreground Images')
     foreground_paths = askopenfilenames()
     
-    
+    print('Analysing Short Term Density Variations')
     density_profile = af.foreground_profile(foreground_paths, background_data, density_locations,excel_path, run, moving_anom, moving_abs)
     
-    return density_profile
+    exp_rho, depth = af.load_data(excel_path, run)
+    
+    rho_bottom=exp_rho[0]
+    rho_top=exp_rho[1]
+    rho_ref=background_data[2]
+    
+    print('Finding background topography')
+    topo_location = af.topo_locator(density_profile,rho_bottom)
+    
+    print('Centering Fields!')
+    data = af.centred_field(topo_location, density_profile, rho_ref, rho_top, run, foreground_paths[0], fixed_anom, fixed_abs)
+    return data
