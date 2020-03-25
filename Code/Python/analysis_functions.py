@@ -374,8 +374,8 @@ def topo_locator(density_abs,rho_bottom):
     plt.plot(topo_location,color='b')
     plt.title('Topography Location')
     plt.xlabel('Image Number')
-    plt.ylabel('Topography Location (Pixel)')
-    plt.pause(3)
+    plt.ylabel('Topography Location (X-Pixel)')
+    plt.pause(5)
     
     return topo_location
 
@@ -537,7 +537,7 @@ def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, fixed_
     
     return centre_rho
                     
-def topograghy_mask(rho, no_hills=1, lensing=33):
+def topograghy_mask(rho, no_hills, bottom_offset=15, lensing=33):
     '''
     A function that reads in a dataset and returns a function that can be used to mask
     the topography (needed for fourier transform)
@@ -546,6 +546,7 @@ def topograghy_mask(rho, no_hills=1, lensing=33):
     ----------
     rho : Dataset that is being read in
     no_hills : The number of hills in the topo. The default is 1.
+    Bottom_offset :  Amount of bottom of array that is sliced off. The Default is 15 points
     lensing : A sort of fudge factor- to overcome the effect of lensing on the topo
         The default is 33.
 
@@ -555,8 +556,11 @@ def topograghy_mask(rho, no_hills=1, lensing=33):
         the topography.
 
     '''
-    t,y,x = rho.shape
-    base = rho[t//2]
+    min_nan=np.min(np.sum(np.isnan(rho[0]),axis=0)) #summing the Nans in the vertical direction
+    rho_c = rho[:,:-(min_nan+bottom_offset),:]
+    
+    t,y,x = rho_c.shape
+    base = rho_c[t//2]
     domain = np.arange(x)
     
 
@@ -574,12 +578,19 @@ def topograghy_mask(rho, no_hills=1, lensing=33):
         
         topo_function=-max_amp*np.exp(-(domain-max_loc)**2/(2*h_m_w**2))+y
         
+        plt.figure()
+        plt.imshow(rho_c[0])
+        plt.plot(topo_function)
+        plt.title('Does Topography Mask Cover Topography?')
+        plt.xlabel('Length')
+        plt.ylabel('Depth')
+        plt.pause(5)
         
-        return topo_function
+        return topo_function, rho_c
         
     if no_hills == 2:
         
-        print('Currently Untested')
+        print('Warning Currently Untested')
         
         mid = x//2
         
@@ -601,21 +612,28 @@ def topograghy_mask(rho, no_hills=1, lensing=33):
         h_m_w = (x-np.nansum(h_m_array))//2+lensing
         
         topo_function=-max_amp_1*np.exp(-(domain-max_loc_1)**2/(2*h_m_w**2))-max_amp_2*np.exp(-(domain-max_loc_2)**2/(2*h_m_w**2))+y
-         
-        return topo_function
+       
+        
+        plt.figure()
+        plt.imshow(rho_c[0])
+        plt.plot(topo_function)
+        plt.title('Does Topography Mask Cover Topography?')
+        plt.xlabel('Length')
+        plt.ylabel('Depth')
+        plt.pause(5)
+        
+        return topo_function, rho_c
 
-def transformed_coords(data_path, bottom_offset=15, return_dataset='yes'):
+def transformed_coords(data, bottom_offset=15):
     '''
     A function that calculates the transformed coordinates needed to mask the 
     the topography
 
     Parameters
     ----------
-    data_path : Path to the data that is being transformed
+    data_path : Data that is being transformed
     bottom_offset : The amount of datapoints that you want to remove from
                     bottom of the dataset. The default is 15.
-    dataset: if the function will return the cropped dataset (with the bottom 
-             part removed). The default is yes, if not desired then 'no'
 
     Returns
     -------
@@ -623,18 +641,11 @@ def transformed_coords(data_path, bottom_offset=15, return_dataset='yes'):
     rho_c : The cropped dataset
 
     '''
-    print(f'Return Bottom Cropped Dataset = {return_dataset}')
-    if return_dataset not in {'yes', 'no'}:
-        print('Return Dataset must be either yes or no, please rerun')
-        sys.exit(1)
-         
-    data = np.load(data_path)
 
-    rho = data['centre_rho']
+         
+    rho = data
     #remving nans at base
-    min_nan=np.min(np.sum(np.isnan(rho[0]),axis=0)) #summing the Nans in the vertical direction
     
-    rho_c = rho[:,:-(min_nan+bottom_offset),:]
     
     topo_function = topograghy_mask(rho_c) #finding the topography shape
     
@@ -651,9 +662,7 @@ def transformed_coords(data_path, bottom_offset=15, return_dataset='yes'):
         topo=topo_function[i]
         transformed_array=z*(zz[:,i]-topo)/(-topo) #function
         zt[:,i]=-np.round(transformed_array)+z
-    
-    if return_dataset  == 'yes':
-        return zt, rho_c
-    
-    if return_dataset  == 'no':
-        return zt
+        
+  
+    return zt, rho_c
+ 
