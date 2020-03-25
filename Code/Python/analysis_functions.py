@@ -624,32 +624,25 @@ def topograghy_mask(rho, no_hills, bottom_offset=15, lensing=33):
         
         return topo_function, rho_c
 
-def transformed_coords(data, bottom_offset=15):
+def transformed_coords(data, topography_mask):
     '''
     A function that calculates the transformed coordinates needed to mask the 
     the topography
 
     Parameters
     ----------
-    data_path : Data that is being transformed
-    bottom_offset : The amount of datapoints that you want to remove from
-                    bottom of the dataset. The default is 15.
+    data : Data that is being transformed
+    Topogrpahy Function
 
     Returns
     -------
     zt : The transformed array, that contains the z' coordinates
-    rho_c : The cropped dataset
 
     '''
 
-         
-    rho = data
-    #remving nans at base
     
     
-    topo_function = topograghy_mask(rho_c) #finding the topography shape
-    
-    t,z,x=rho_c.shape
+    t,z,x=data.shape
     
     #creating data used in transform
     x_array = np.arange(x)
@@ -659,10 +652,83 @@ def transformed_coords(data, bottom_offset=15):
     zt=np.zeros((z,x)) #where we are storing the transformed z coordinate
     
     for i in range(x):
-        topo=topo_function[i]
+        topo=topography_mask[i]
         transformed_array=z*(zz[:,i]-topo)/(-topo) #function
         zt[:,i]=-np.round(transformed_array)+z
         
   
-    return zt, rho_c
- 
+    return zt
+
+def low_pass_filter(z,x,sigma=0.1,mu=0):
+    '''
+    Simple function that generates a low pass filter (using a gaussian)
+
+    Parameters
+    ----------
+    z : height of array
+    y : length of array
+    sigma : As this uses a guassian filter sigma is width of gaussian which
+            coresponds to the strength of filter. The default is 0.1.
+    mu : The mean of the gaussian. The default is 0.
+
+    Returns
+    -------
+    filt : Returns a 2d array containing the low pass filter
+
+    '''
+
+    x_fft = np.fft.fftfreq(x)
+    z_fft = np.fft.fftfreq(z)
+
+    x_filt =np.exp(-(x_fft-mu)**2/(2*sigma**2))
+    z_filt =np.exp(-(z_fft-mu)**2/(2*sigma**2))
+
+    filt = x_filt*z_filt[:,None]
+    
+    return filt
+
+def plot_w(data, run, path):
+    
+    if not os.path.exists('{}/results'.format(os.path.dirname(path))):
+        os.makedirs('{}/results'.format(os.path.dirname(path)))
+    
+    ims=[]
+    fig = plt.figure(figsize=(10,5))
+    
+    t,y,x=data.shape
+    
+    for i in range(t):
+        
+        image=data[i]
+        
+        cmap = cmo.cm.balance
+        vmin=-0.1
+        vmax=-vmin
+            
+    
+        im=plt.imshow(image, cmap=cmap, animated=True, vmin=vmin,vmax=vmax)
+        title = 'Run {}- Vertical Velocity'.format(run)
+        plt.title(title, fontsize=20)
+        
+        plt.xlabel('Length (m)')
+        plt.ylabel('Depth (m)')
+        
+        ims.append([im])
+    
+            
+    ani = animation.ArtistAnimation(fig, ims, interval=125, blit=True,
+                                    repeat_delay=1000)
+    
+    ax = plt.gca()
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    cbar=plt.colorbar(im, cax=cax)
+    cbar.set_label(r'Vertical Velocity (m s$^{-1}$)', rotation=90)
+    
+    
+    print('Saving!')
+    
+    writer = animation.writers['ffmpeg']
+    save_name = 'run_{}_w_vel'.format(run)
+    ani.save('{}/results/{}.mp4'.format(os.path.dirname(path),save_name), dpi=250)
+

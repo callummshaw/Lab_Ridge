@@ -11,19 +11,18 @@ import cv2
 import matplotlib.pyplot as plt
 from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import askopenfilenames
-import time 
 import numpy as np
 from multiprocessing.pool import ThreadPool as Pool
+import pandas as pd
+from numpy import fft
 #Doing everything in one--- choose yes or no for each animation that you want:
-
 
 
 excel_path='E:/records.xlsx'
 
 run = 8 #run number
 
-def light_attenuation_analysis(run, excel_path, no_hills=1, moving_anom = 'no', moving_abs = 'no', fixed_anom = 'no', fixed_abs = 'no', w_vel = 'no', uvel = 'no'):
-    
+def light_attenuation_analysis(run, excel_path, no_hills=1, sigma=0.01, moving_anom = 'no', moving_abs = 'no', fixed_anom = 'no', fixed_abs = 'no', w_vel = 'no', u_vel = 'no'):
     exp_rho, depth = af.load_data(excel_path, run)
     #Analysing background image
     print('\n Select Background Image')
@@ -41,7 +40,7 @@ def light_attenuation_analysis(run, excel_path, no_hills=1, moving_anom = 'no', 
         depth_array, background_data = af.background_analysis(b_image, density_locations, exp_rho, depth)
  
         
-        ok = int(input('Happy with background density? 1 for yes, 2 for no: '))
+        ok = int(input(' Happy with background density? 1 for yes, 2 for no: '))
         
         if ok == 1:
             break
@@ -49,7 +48,8 @@ def light_attenuation_analysis(run, excel_path, no_hills=1, moving_anom = 'no', 
     
     print('\n Select Foreground Images')
     foreground_paths = askopenfilenames()
-    print('\n Analysing Short Term Density Variations')
+    length = len(foreground_paths)
+    print(f'\n Analysing Short Term Density Variations For {length} Images')
     density_profile = af.foreground_profile(foreground_paths, background_data, density_locations,excel_path, run, moving_anom, moving_abs)
     
     exp_rho, depth = af.load_data(excel_path, run)
@@ -68,17 +68,104 @@ def light_attenuation_analysis(run, excel_path, no_hills=1, moving_anom = 'no', 
     print('\n Centering Fields!')
     data = af.centred_field(topo_location, density_profile, rho_ref, rho_top, run, foreground_paths[0], fixed_anom, fixed_abs)
     
-    print('\n Transforming and filtering data for Fourier Filtering')
+    print('\n Transforming data for Fourier Filtering')
     bottom_offset=15 #adjusting bottom cutoff of mask
     lensing = 33 #adjusting width of mask
     while True:
         #choosing region that you want (cropping photo to just show water)
         topo_mask, cropped_data = af.topograghy_mask(data, no_hills, bottom_offset=bottom_offset, lensing=lensing)
-        ok = int(input('\n Happy with topography mask? 1 for yes, 2 for no: '))
+        ok = int(input(' Happy with topography mask? 1 for yes, 2 for no: '))
         if ok == 2:
-            lensing = int(input(f'\n New Lensing Value (Previous was {lensing}): '))
-            bottom_offset = int(input(f'\n New Bottom Offset Value (Previous was {bottom_offset}): '))
+            lensing = int(input(f' New Lensing Value (Previous was {lensing}): '))
+            bottom_offset = int(input(f' New Bottom Offset Value (Previous was {bottom_offset}): '))
         if ok == 1:
             break
     
+    z_prime = af.transformed_coords(cropped_data, topo_mask)
+    t,z,x=cropped_data.shape
+
+    filt = af.low_pass_filter(z-2, x-2, sigma=sigma)
+    print('\n Now filtering Data')
+    def fourier_filter_and_trans(i):
+        '''
+        A function the preforms low pass filter, removing all the high frequency
+        noise present in the data (using a gaussian filter).
+    
+        Parameters
+        ----------
+        data : Data set that needs to be filtered
+        sigma : As this uses a guassian filter sigma is width of gaussian which
+                coresponds to the strength of filter
+    
+        Returns
+        -------
+        Data set that has undergone low pass filter transformed back onto regular grid
+    
+        '''
+        
+        data = cropped_data[i]
+        z,x=data.shape
+        trans_dummy = np.zeros((z,x)) #variable to store date during transform
+        
+        #applying the transform on the data
+        for k in range(x):
+                for j in range(z):
+                    wanted_data=data[j,k]
+                    z_loc = int(z_prime[j,k])
+                    if z_loc<z:
+                        trans_dummy[z_loc,k]=wanted_data
+        
+        trans_dummy[trans_dummy==0]=np.nan
+        
+        #now interpolating data
+        dummy_frame = pd.DataFrame(trans_dummy)
+        dummy_int = dummy_frame.interpolate()
+        dummy_int = dummy_int.values
+        cropped = dummy_int[1:-1,1:-1]
+        z_prime_c=z_prime[1:-1,1:-1]
+        
+        
+                
+        fft_data = fft.fft2(cropped) #preforming fft
+        filtered_data = fft_data*filt #filtering
+        ifft_data = fft.ifft2(filtered_data) #going back to cartesian space
+        
+        filt_d = np.float32(ifft_data.real)
+    
+        filt_dummy = np.zeros(filt_d.shape)
+        z,x=filt_d.shape
+        
+        for k in range(x): 
+            for j in range(z):
+                z_val = z_prime_c[j,k]
+                if z_val < z-1:
+                    filt_dummy[j,k]=filt_d[int(z_val),k]
+        filt_dummy=np.float32(filt_dummy)
+        filt_dummy[filt_dummy==0]=np.nan
+        
+        return(filt_dummy)       
+    
+    if __name__ == '__main__':
+          numbers=range(t)
+          p = Pool()
+          result = p.map(fourier_filter_and_trans, numbers)
+          p.close()
+          p.join()
+    
+    result=np.dstack(result)
+    result = np.moveaxis(result,2,0)    
+    
+    print('\n Filtering Finished')
+    
+    print('\n Now calculating W')
+
+    scale=-g/(rho_0*buoyancy_freq**2)
+    w = scale*np.gradient(result-1000,axis=0)
+    
+    if w_vel == 'yes':
+        print('Plotting W')
+        af.plot_w(w, run, foreground_paths[0])  
+    
+    if u_vel == 'yes':
+        print('Warning!! Not Yet Finished')
     
