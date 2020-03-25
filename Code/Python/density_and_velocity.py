@@ -41,7 +41,8 @@ def light_attenuation_analysis(run, excel_path, no_hills=1, sigma=0.01, moving_a
  
         
         ok = int(input(' Happy with background density? 1 for yes, 2 for no: '))
-        
+        if ok == 2:
+            print('\n Please redo cropping region')
         if ok == 1:
             break
         
@@ -87,21 +88,6 @@ def light_attenuation_analysis(run, excel_path, no_hills=1, sigma=0.01, moving_a
     filt = af.low_pass_filter(z-2, x-2, sigma=sigma)
     print('\n Now filtering Data')
     def fourier_filter_and_trans(i):
-        '''
-        A function the preforms low pass filter, removing all the high frequency
-        noise present in the data (using a gaussian filter).
-    
-        Parameters
-        ----------
-        data : Data set that needs to be filtered
-        sigma : As this uses a guassian filter sigma is width of gaussian which
-                coresponds to the strength of filter
-    
-        Returns
-        -------
-        Data set that has undergone low pass filter transformed back onto regular grid
-    
-        '''
         
         data = cropped_data[i]
         z,x=data.shape
