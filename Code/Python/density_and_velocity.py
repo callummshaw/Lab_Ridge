@@ -15,14 +15,13 @@ import numpy as np
 from multiprocessing.pool import ThreadPool as Pool
 import pandas as pd
 from numpy import fft
-#Doing everything in one--- choose yes or no for each animation that you want:
+
 
 
 excel_path='E:/records.xlsx'
+run = 8 
 
-run = 8 #run number
-
-def light_attenuation_analysis(run, excel_path, no_hills=1, sigma=0.01, moving_anom = 'no', moving_abs = 'no', fixed_anom = 'no', fixed_abs = 'no', w_vel = 'no', u_vel = 'no'):
+def light_attenuation_analysis(run, excel_path, no_hills=1, sigma=0.005, moving_anom = 'no', moving_abs = 'no', fixed_anom = 'no', fixed_abs = 'no', w_vel = 'no', u_vel = 'no'):
     exp_rho, depth = af.load_data(excel_path, run)
     #Analysing background image
     print('\n Select Background Image')
@@ -147,9 +146,9 @@ def light_attenuation_analysis(run, excel_path, no_hills=1, sigma=0.01, moving_a
 
     scale=-g/(rho_0*buoyancy_freq**2)
     w = scale*np.gradient(result-1000,axis=0)
-    
+
     if w_vel == 'yes':
-        print('Plotting W')
+        print('\n Plotting W')
         af.plot_w(w, run, foreground_paths[0])  
     
     if u_vel == 'yes':

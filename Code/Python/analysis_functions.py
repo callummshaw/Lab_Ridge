@@ -659,7 +659,7 @@ def transformed_coords(data, topography_mask):
   
     return zt
 
-def low_pass_filter(z,x,sigma=0.1,mu=0):
+def low_pass_filter(z,x,sigma=0.05,mu=0):
     '''
     Simple function that generates a low pass filter (using a gaussian)
 
@@ -702,7 +702,7 @@ def plot_w(data, run, path):
         image=data[i]
         
         cmap = cmo.cm.balance
-        vmin=-0.1
+        vmin=-5e-4
         vmax=-vmin
             
     
