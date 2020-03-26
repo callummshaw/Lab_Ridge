@@ -12,10 +12,12 @@ Currently the instialltion is very simplistic, download the repository and run t
 ## Usage 
 
 Running the analysis has been designed to be as straightfoward as possible. Just open the analysis_functions.py program. At the top of the program you will see:
+
 '''python
 excel_path='E:/records.xlsx'
 run = 8 
 '''
+
 Enter the path to your excel document that contains all the infomation about the runs (density, water depth, etc.) and the run number 
 
 ## Future Additions
