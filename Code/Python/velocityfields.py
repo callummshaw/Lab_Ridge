@@ -87,5 +87,5 @@ cbar.set_label(r'Velocity (m s$^{-1}$)', rotation=90)
 print('Saving!')
 
 writer = animation.writers['ffmpeg']
-save_name = 'vertical_velocity_1'
+save_name = 'vertical_velocity_05'
 ani.save('{}/{}.mp4'.format(os.path.dirname(transform_data_path),save_name), dpi=250)

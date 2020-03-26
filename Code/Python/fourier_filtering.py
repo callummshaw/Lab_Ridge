@@ -19,7 +19,7 @@ t_data = np.moveaxis(t_data,2,0) #move time to first axis like rest of data
 data = t_data[:,1:-1,1:-1] #removing boundary nans
 t,z,x = data.shape
 #filter:
-def low_pass_filter(z,x,sigma=0.1,mu=0):
+def low_pass_filter(z,x,sigma=0.01,mu=0):
     '''
     Simple function that generates a low pass filter (using a gaussian)
 
@@ -47,7 +47,7 @@ def low_pass_filter(z,x,sigma=0.1,mu=0):
     
     return filt
 
-filt = low_pass_filter(z, x, sigma=.01)
+filt = low_pass_filter(z, x, sigma=.005)
 
 def fourier_filter(i):
     '''

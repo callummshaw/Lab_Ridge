@@ -109,6 +109,7 @@ def background_analysis(b_image, density_locations, exp_rho, depth):
     
     rho_ref=background_data[2]
     
+    
     plt.figure()
     im=plt.imshow(rho_ref,vmin=exp_rho[0],vmax=exp_rho[1], extent=[0,depth/rho_ref.shape[0]*rho_ref.shape[1],-depth,0])
     plt.title('Background Density')
@@ -120,27 +121,30 @@ def background_analysis(b_image, density_locations, exp_rho, depth):
     cbar=plt.colorbar(im, cax=cax)
     cbar.set_label(r'Density (kg m$^{-3}$)', rotation=90)
     cbar.ax.invert_yaxis()
+    plt.pause(5)
     
     return depth_array, background_data
 
-def foreground_profile(what, foreground_path, background_data, density_locations, path, run):
+def foreground_profile(foreground_path, background_data, density_locations, path, run, moving_anom = 'no', moving_abs = 'no'):
     '''
     
 
     Parameters
     ----------
-    what : If = 1, then will only save animation, =2 then will make abs vid, if =3 then will make anom vid
     foreground_path : Location of all the foreground pictures
     background_data : Produced by background profile, contains beta, bottom_ref and rho_ref
     density_locations : Top and bottom of water column
     path : path to excel doco
     run : run number
+    moving_anom :if yes will make animation. Default is no
+    moving_abs : if yes will make animation. Default is no
 
     Returns
     -------
-    None.
+    Density data
 
     '''
+    np.seterr(divide='ignore')
     exp_rho, depth = load_data(path, run)
     
     rho_bottom=exp_rho[0]
@@ -159,29 +163,29 @@ def foreground_profile(what, foreground_path, background_data, density_locations
     bottom_ref=background_data[1]
     rho_ref=background_data[2]
     
-    
-    #the save only option (no plotting)
-    if what == 1:
-        crop_points=600 #how much you want to crop in vertical
-        y,x=rho_ref.shape
-        density_abs = np.zeros((no_images,crop_points,x))
-        #only taking the crop_points closest to the top to save
-        for i in range(no_images):
 
-            f_image=cv2.imread(foreground_path[i],0)
-            f_image_crop=f_image[zbot:ztop,:]
-            absorbtion = np.log(f_image_crop)
+    crop_points=600 #how much you want to crop in vertical
+    y,x=rho_ref.shape
 
-            #getting rid of unwated inf_values and converting to density
-            absorbtion[np.isinf(absorbtion)]=np.nan
-            density = rho_bottom+np.float64(beta*(absorbtion-bottom_ref))
-            
-            #putting density data into array
-            density_abs[i]=density[:crop_points,:][::-1]  #cropping and flipping data
+    density_abs = np.zeros((no_images,crop_points,x))
+    #only taking the crop_points closest to the top to save
+    for i in range(no_images):
+
+        f_image=cv2.imread(foreground_path[i],0)
+        f_image_crop=f_image[zbot:ztop,:]
+        absorbtion = np.log(f_image_crop)
+
+        #getting rid of unwated inf_values and converting to density
+        absorbtion[np.isinf(absorbtion)]=np.nan
+        density = rho_bottom+np.float64(beta*(absorbtion-bottom_ref))
         
-        np.savez('{}/results/data'.format(os.path.dirname(foreground_path[0])),density_abs=density_abs, background_data=background_data)
+        #putting density data into array
+        density_abs[i]=density[:crop_points,:][::-1]  #cropping and flipping data
+      
+    print ('\n Done Analysing Images!')     
     #plotting anom
-    if what == 3:
+    if moving_anom == 'yes':
+        print('\n Making Anomaly Animation')
         ims=[]
         fig = plt.figure(figsize=(10,5))
         for i in range(no_images):
@@ -228,6 +232,8 @@ def foreground_profile(what, foreground_path, background_data, density_locations
         cbar=plt.colorbar(im, cax=cax)
         cbar.set_label(r'Density (kg m$^{-3}$)', rotation=90)
         
+        if i % 25 == 0:
+                print('{} of {} Images Done!'.format(i,no_images))
         
     
         print('Saving!')
@@ -236,7 +242,8 @@ def foreground_profile(what, foreground_path, background_data, density_locations
         save_name = 'run_{}_anomaly'.format(run)
         ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
     #plotting abs    
-    if what == 2:
+    if moving_abs == 'yes':
+        print('\n Making Abseloute Animation')
         ims=[]
         fig = plt.figure(figsize=(10,5))
         
@@ -298,6 +305,8 @@ def foreground_profile(what, foreground_path, background_data, density_locations
         writer = animation.writers['ffmpeg']
         save_name = 'run_{}_abs'.format(run)
         ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
+        
+    return density_abs
 
 def max_and_loc(data):
     '''
@@ -343,7 +352,7 @@ def topo_locator(density_abs,rho_bottom):
     topo_location : An array that has the average location (X Pixel) of tip of topography for each image in dataset
 
     '''
-    
+    np.seterr(invalid='ignore')
     t,y,x=density_abs.shape
     topo_location=np.zeros(t)
     
@@ -365,20 +374,21 @@ def topo_locator(density_abs,rho_bottom):
     plt.plot(topo_location,color='b')
     plt.title('Topography Location')
     plt.xlabel('Image Number')
-    plt.ylabel('Topography Location (Pixel)')
+    plt.ylabel('Topography Location (X-Pixel)')
+    plt.pause(5)
     
     return topo_location
 
-def crop_centre(i, topo_location, field, rho_ref):
+def crop_centre(topo_location, field, rho_ref, anom ='no'):
     '''
     
 
     Parameters
     ----------
-    i: if I = 1 or 2 then returns abs density if rho =3 then returns anom 
     topo_location : An array that has the average location (X Pixel) of tip of topography for each image in dataset
     field : Dataset that we are cropping (either density abs or density anom)
     rho_ref : Dataset that that has the background density
+    fixed_anom :  Generate data for anom
 
     Returns
     -------
@@ -394,8 +404,21 @@ def crop_centre(i, topo_location, field, rho_ref):
     
     cropped_field = np.zeros((t,y,right+left))
     
-    
-    if i ==1 or i == 2:
+    if anom == 'yes':
+        for j in range(t):
+            topo=int(topo_location[j])
+            
+            image=field[j]
+            
+            cropped_image=image[:,int(topo-left):int(topo+right)]
+            cropped_ref=rho_ref[:600,int(topo-left):int(topo+right)]
+            
+            delta=cropped_image-cropped_ref
+            cropped_field[j] = delta
+            
+        return cropped_field
+        
+    else:
         
         for j in range(t):
             topo=int(topo_location[j])
@@ -409,34 +432,19 @@ def crop_centre(i, topo_location, field, rho_ref):
         
         return cropped_field
     
-    elif i == 3:
-        
-        for j in range(t):
-            topo=int(topo_location[j])
-            
-            image=field[j]
-            
-            cropped_image=image[:,int(topo-left):int(topo+right)]
-            cropped_ref=rho_ref[:600,int(topo-left):int(topo+right)]
-            
-            delta=cropped_image-cropped_ref
-            cropped_field[j] = delta
-            
-        return cropped_field
 
     
 
-def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
+def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, fixed_anom, fixed_abs):
     
-    #saving data
-    if i == 1:
-        
-        centre_rho = crop_centre(i,topo_location,field, rho_ref)
-        np.savez('{}/centre_data'.format(os.path.dirname(data_path)),centre_rho=centre_rho)
-        
-    if i == 2:
-        centre_rho = crop_centre(i,topo_location,field, rho_ref)
-        
+    centre_rho = crop_centre(topo_location, field, rho_ref)
+
+    if not os.path.exists('{}/results'.format(os.path.dirname(data_path))):
+        os.makedirs('{}/results'.format(os.path.dirname(data_path)))
+    
+
+    if fixed_abs == 'yes':
+        print('\n Making Abseloute Animation')
         ims=[]
         fig = plt.figure(figsize=(10,5))
         
@@ -475,10 +483,11 @@ def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
         
         writer = animation.writers['ffmpeg']
         save_name = 'run_{}_abs_centre'.format(run)
-        ani.save('{}/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
+        ani.save('{}/results/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
     
-    if i == 3:
-        centre_anom = crop_centre(i,topo_location,field, rho_ref)
+    if fixed_anom == 'yes':
+        print('\n Making Anomaly Animation')
+        centre_anom = crop_centre(topo_location,field, rho_ref, anom='yes')
         
         ims=[]
         fig = plt.figure(figsize=(10,5))
@@ -524,9 +533,11 @@ def centred_field(i, topo_location, field, rho_ref, rho_top, run, data_path):
         
         writer = animation.writers['ffmpeg']
         save_name = 'run_{}_anomaly_centre'.format(run)
-        ani.save('{}/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
+        ani.save('{}/results/{}.mp4'.format(os.path.dirname(data_path),save_name), dpi=250)
+    
+    return centre_rho
                     
-def topograghy_mask(rho, no_hills=1, lensing=33):
+def topograghy_mask(rho, no_hills, bottom_offset=15, lensing=33):
     '''
     A function that reads in a dataset and returns a function that can be used to mask
     the topography (needed for fourier transform)
@@ -535,6 +546,7 @@ def topograghy_mask(rho, no_hills=1, lensing=33):
     ----------
     rho : Dataset that is being read in
     no_hills : The number of hills in the topo. The default is 1.
+    Bottom_offset :  Amount of bottom of array that is sliced off. The Default is 15 points
     lensing : A sort of fudge factor- to overcome the effect of lensing on the topo
         The default is 33.
 
@@ -544,8 +556,11 @@ def topograghy_mask(rho, no_hills=1, lensing=33):
         the topography.
 
     '''
-    t,y,x = rho.shape
-    base = rho[t//2]
+    min_nan=np.min(np.sum(np.isnan(rho[0]),axis=0)) #summing the Nans in the vertical direction
+    rho_c = rho[:,:-(min_nan+bottom_offset),:]
+    
+    t,y,x = rho_c.shape
+    base = rho_c[t//2]
     domain = np.arange(x)
     
 
@@ -563,11 +578,19 @@ def topograghy_mask(rho, no_hills=1, lensing=33):
         
         topo_function=-max_amp*np.exp(-(domain-max_loc)**2/(2*h_m_w**2))+y
         
-        return topo_function
+        plt.figure()
+        plt.imshow(rho_c[0])
+        plt.plot(topo_function)
+        plt.title('Does Topography Mask Cover Topography?')
+        plt.xlabel('Length')
+        plt.ylabel('Depth')
+        plt.pause(5)
+        
+        return topo_function, rho_c
         
     if no_hills == 2:
         
-        print('Currently Untested')
+        print('Warning Currently Untested')
         
         mid = x//2
         
@@ -589,44 +612,37 @@ def topograghy_mask(rho, no_hills=1, lensing=33):
         h_m_w = (x-np.nansum(h_m_array))//2+lensing
         
         topo_function=-max_amp_1*np.exp(-(domain-max_loc_1)**2/(2*h_m_w**2))-max_amp_2*np.exp(-(domain-max_loc_2)**2/(2*h_m_w**2))+y
-         
-        return topo_function
+       
+        
+        plt.figure()
+        plt.imshow(rho_c[0])
+        plt.plot(topo_function)
+        plt.title('Does Topography Mask Cover Topography?')
+        plt.xlabel('Length')
+        plt.ylabel('Depth')
+        plt.pause(5)
+        
+        return topo_function, rho_c
 
-def transformed_coords(data_path, bottom_offset=15, return_dataset='yes'):
+def transformed_coords(data, topography_mask):
     '''
     A function that calculates the transformed coordinates needed to mask the 
     the topography
 
     Parameters
     ----------
-    data_path : Path to the data that is being transformed
-    bottom_offset : The amount of datapoints that you want to remove from
-                    bottom of the dataset. The default is 15.
-    dataset: if the function will return the cropped dataset (with the bottom 
-             part removed). The default is yes, if not desired then 'no'
+    data : Data that is being transformed
+    Topogrpahy Function
 
     Returns
     -------
     zt : The transformed array, that contains the z' coordinates
-    rho_c : The cropped dataset
 
     '''
-    print(f'Return Bottom Cropped Dataset = {return_dataset}')
-    if return_dataset not in {'yes', 'no'}:
-        print('Return Dataset must be either yes or no, please rerun')
-        sys.exit(1)
-         
-    data = np.load(data_path)
 
-    rho = data['centre_rho']
-    #remving nans at base
-    min_nan=np.min(np.sum(np.isnan(rho[0]),axis=0)) #summing the Nans in the vertical direction
     
-    rho_c = rho[:,:-(min_nan+bottom_offset),:]
     
-    topo_function = topograghy_mask(rho_c) #finding the topography shape
-    
-    t,z,x=rho_c.shape
+    t,z,x=data.shape
     
     #creating data used in transform
     x_array = np.arange(x)
@@ -636,12 +652,83 @@ def transformed_coords(data_path, bottom_offset=15, return_dataset='yes'):
     zt=np.zeros((z,x)) #where we are storing the transformed z coordinate
     
     for i in range(x):
-        topo=topo_function[i]
+        topo=topography_mask[i]
         transformed_array=z*(zz[:,i]-topo)/(-topo) #function
         zt[:,i]=-np.round(transformed_array)+z
+        
+  
+    return zt
+
+def low_pass_filter(z,x,sigma=0.1,mu=0):
+    '''
+    Simple function that generates a low pass filter (using a gaussian)
+
+    Parameters
+    ----------
+    z : height of array
+    y : length of array
+    sigma : As this uses a guassian filter sigma is width of gaussian which
+            coresponds to the strength of filter. The default is 0.1.
+    mu : The mean of the gaussian. The default is 0.
+
+    Returns
+    -------
+    filt : Returns a 2d array containing the low pass filter
+
+    '''
+
+    x_fft = np.fft.fftfreq(x)
+    z_fft = np.fft.fftfreq(z)
+
+    x_filt =np.exp(-(x_fft-mu)**2/(2*sigma**2))
+    z_filt =np.exp(-(z_fft-mu)**2/(2*sigma**2))
+
+    filt = x_filt*z_filt[:,None]
     
-    if return_dataset  == 'yes':
-        return zt, rho_c
+    return filt
+
+def plot_w(data, run, path):
     
-    if return_dataset  == 'no':
-        return zt
+    if not os.path.exists('{}/results'.format(os.path.dirname(path))):
+        os.makedirs('{}/results'.format(os.path.dirname(path)))
+    
+    ims=[]
+    fig = plt.figure(figsize=(10,5))
+    
+    t,y,x=data.shape
+    
+    for i in range(t):
+        
+        image=data[i]
+        
+        cmap = cmo.cm.balance
+        vmin=-0.1
+        vmax=-vmin
+            
+    
+        im=plt.imshow(image, cmap=cmap, animated=True, vmin=vmin,vmax=vmax)
+        title = 'Run {}- Vertical Velocity'.format(run)
+        plt.title(title, fontsize=20)
+        
+        plt.xlabel('Length (m)')
+        plt.ylabel('Depth (m)')
+        
+        ims.append([im])
+    
+            
+    ani = animation.ArtistAnimation(fig, ims, interval=125, blit=True,
+                                    repeat_delay=1000)
+    
+    ax = plt.gca()
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    cbar=plt.colorbar(im, cax=cax)
+    cbar.set_label(r'Vertical Velocity (m s$^{-1}$)', rotation=90)
+    
+    
+    print('Saving!')
+    
+    writer = animation.writers['ffmpeg']
+    save_name = 'run_{}_w_vel'.format(run)
+    ani.save('{}/results/{}.mp4'.format(os.path.dirname(path),save_name), dpi=250)
+
