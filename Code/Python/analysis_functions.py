@@ -676,11 +676,12 @@ def low_pass_filter(z,x,sigma=0.05,mu=0):
     filt : Returns a 2d array containing the low pass filter
 
     '''
-
+    ratio=.8
+    
     x_fft = np.fft.fftfreq(x)
     z_fft = np.fft.fftfreq(z)
 
-    x_filt =np.exp(-(x_fft-mu)**2/(2*sigma**2))
+    x_filt =np.exp(-(x_fft-mu)**2/(2*(ratio*sigma)**2))
     z_filt =np.exp(-(z_fft-mu)**2/(2*sigma**2))
 
     filt = x_filt*z_filt[:,None]
