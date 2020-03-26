@@ -18,6 +18,9 @@ excel_path='E:/records.xlsx'
 run = 8 
 ```
 
-Enter the path to your excel document that contains all the infomation about the runs (density, water depth, etc.) and the run number 
+Enter the path to your excel document that contains all the infomation about the runs (density, water depth, etc.) and the experiment run number. After this then run the light_attenuation_analysis function. This function has a number of arguements:
 
+```python
+light_attenuation_analysis(run, excel_path, no_hills=1, sigma=0.005, moving_anom = 'no', moving_abs = 'no', fixed_anom = 'no', fixed_abs = 'no', w_vel = 'no', u_vel = 'no'): 
+```
 ## Future Additions
