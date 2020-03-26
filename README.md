@@ -10,3 +10,12 @@ The code adapts the light attenuation technique used by Yvan Dossman to analyse 
 Currently the instialltion is very simplistic, download the repository and run the density_and_velocity.py program from the code folder. This will load in the analysis_functions.py as a module and use the functions contained within it. 
 
 ## Usage 
+
+Running the analysis has been designed to be as straightfoward as possible. Just open the analysis_functions.py program. At the top of the program you will see:
+'''python
+excel_path='E:/records.xlsx'
+run = 8 
+'''
+Enter the path to your excel document that contains all the infomation about the runs (density, water depth, etc.) and the run number 
+
+## Future Additions
