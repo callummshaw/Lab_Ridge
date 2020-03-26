@@ -29,7 +29,7 @@ After running the function it will display a number of prompts that will need to
 
 The program will then ask for the foreground images to analyse. When choosing the foreground images is important to have the topography in all images. It will then produce the videos in the Lagrangian frame if desired. The program will then locate the topography and keep the topography centred in the dataset and produce the density videos in the Eularian frame. The program will then filter the density data to smooth it out in preparation for converting to velocity. To convert from density to velocity the funciton uses the buoyancy equation:
 
-```math
+```latex
 $\frac{D b}{D t}+N^2(z)w\approx 0,$
 ```
 to determine $w$. This yields:
