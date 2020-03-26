@@ -30,3 +30,7 @@ After running the function it will display a number of prompts that will need to
 The program will then ask for the foreground images to analyse. When choosing the foreground images is important to have the topography in all images. It will then produce the videos in the Lagrangian frame if desired. The program will then locate the topography and keep the topography centred in the dataset and produce the density videos in the Eularian frame. The program will then filter the density data to smooth it out in preparation for converting to velocity. To convert from density to vertical velocity the funciton uses the buoyancy equation and to find u it uses the continuity equation. 
 
 To filter the data the function first masks the topography, and it will ask if the mask sufficiently covers the topography, if it does it will continue and if not it will allow you adjust the mask till it does. The function then creates a transformed z coordinate, which is used to transform the data onto a rectangular grid and contains no topography. The fourier transforms are taken and a low bandpass filter used to remove any high frequency noise. The data is transformed back to the regular grid and the time deritive taken to give w. The function will then plot w if desired. 
+
+## Future Work
+
+The current plan is to find the u_velocity using the continuity equation (harder than initially thought) and then measure the fluxes across the topography
