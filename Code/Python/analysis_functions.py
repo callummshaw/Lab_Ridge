@@ -125,7 +125,7 @@ def background_analysis(b_image, density_locations, exp_rho, depth):
     
     return depth_array, background_data
 
-def foreground_profile(foreground_path, background_data, density_locations, path, run, moving_anom = 'no', moving_abs = 'no'):
+def foreground_profile(foreground_path, background_data, density_locations, path, run, vertical_crop, moving_anom = 'no', moving_abs = 'no'):
     '''
     
 
@@ -164,7 +164,7 @@ def foreground_profile(foreground_path, background_data, density_locations, path
     rho_ref=background_data[2]
     
 
-    crop_points=600 #how much you want to crop in vertical
+    crop_points=vertical_crop #how much you want to crop in vertical
     y,x=rho_ref.shape
 
     density_abs = np.zeros((no_images,crop_points,x))
@@ -379,7 +379,7 @@ def topo_locator(density_abs,rho_bottom):
     
     return topo_location
 
-def crop_centre(topo_location, field, rho_ref, anom ='no'):
+def crop_centre(topo_location, field, rho_ref, vertical_crop, anom ='no'):
     '''
     
 
@@ -411,7 +411,7 @@ def crop_centre(topo_location, field, rho_ref, anom ='no'):
             image=field[j]
             
             cropped_image=image[:,int(topo-left):int(topo+right)]
-            cropped_ref=rho_ref[:600,int(topo-left):int(topo+right)]
+            cropped_ref=rho_ref[:vertical_crop,int(topo-left):int(topo+right)]
             
             delta=cropped_image-cropped_ref
             cropped_field[j] = delta
@@ -435,9 +435,9 @@ def crop_centre(topo_location, field, rho_ref, anom ='no'):
 
     
 
-def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, fixed_anom, fixed_abs):
+def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, vertical_crop, fixed_anom, fixed_abs):
     
-    centre_rho = crop_centre(topo_location, field, rho_ref)
+    centre_rho = crop_centre(topo_location, field, rho_ref, vertical_crop)
 
     if not os.path.exists('{}/results'.format(os.path.dirname(data_path))):
         os.makedirs('{}/results'.format(os.path.dirname(data_path)))
@@ -487,7 +487,7 @@ def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, fixed_
     
     if fixed_anom == 'yes':
         print('\n Making Anomaly Animation')
-        centre_anom = crop_centre(topo_location,field, rho_ref, anom='yes')
+        centre_anom = crop_centre(topo_location,field, rho_ref, vertical_crop, anom='yes')
         
         ims=[]
         fig = plt.figure(figsize=(10,5))

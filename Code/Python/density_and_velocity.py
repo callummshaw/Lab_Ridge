@@ -21,7 +21,7 @@ from numpy import fft
 excel_path='E:/records.xlsx'
 run = 8 
 
-def light_attenuation_analysis(run, excel_path, no_hills=1, sigma=0.005, moving_anom = 'no', moving_abs = 'no', fixed_anom = 'no', fixed_abs = 'no', w_vel = 'no', u_vel = 'no'):
+def light_attenuation_analysis(run, excel_path, vertical_crop=600, no_hills=1, sigma=0.005, moving_anom = 'no', moving_abs = 'no', fixed_anom = 'no', fixed_abs = 'no', w_vel = 'no', u_vel = 'no'):
     exp_rho, depth = af.load_data(excel_path, run)
     #Analysing background image
     print('\n Select Background Image')
@@ -50,7 +50,7 @@ def light_attenuation_analysis(run, excel_path, no_hills=1, sigma=0.005, moving_
     foreground_paths = askopenfilenames()
     length = len(foreground_paths)
     print(f'\n Analysing Short Term Density Variations For {length} Images')
-    density_profile = af.foreground_profile(foreground_paths, background_data, density_locations,excel_path, run, moving_anom, moving_abs)
+    density_profile = af.foreground_profile(foreground_paths, background_data, density_locations,excel_path, run, vertical_crop, moving_anom, moving_abs)
     
     exp_rho, depth = af.load_data(excel_path, run)
     
@@ -66,7 +66,7 @@ def light_attenuation_analysis(run, excel_path, no_hills=1, sigma=0.005, moving_
     topo_location = af.topo_locator(density_profile,rho_bottom)
     
     print('\n Centering Fields!')
-    data = af.centred_field(topo_location, density_profile, rho_ref, rho_top, run, foreground_paths[0], fixed_anom, fixed_abs)
+    data = af.centred_field(topo_location, density_profile, rho_ref, rho_top, run, foreground_paths[0], vertical_crop, fixed_anom, fixed_abs)
     
     print('\n Transforming data for Fourier Filtering')
     bottom_offset=15 #adjusting bottom cutoff of mask
