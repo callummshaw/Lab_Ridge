@@ -11,7 +11,7 @@ Currently the instialltion is very simplistic, download the repository and run t
 
 ## Usage
 
-Running the analysis has been designed to be as straightforward as possible. Just open the analysis_functions.py program. At the top of the program you will see:
+Running the analysis has been designed to be as straightforward as possible. All that is required is a picture of the background stratification, pictures of the ridge transiting the tank and an excel document that contains all the information about the experiments (see uploaded spreadsheet for an example). Just open the analysis_functions.py program. At the top of the program you will see:
 
 ```python
 excel_path='E:/records.xlsx'
