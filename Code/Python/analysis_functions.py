@@ -164,6 +164,7 @@ def foreground_profile(foreground_path, background_data, density_locations, path
     
     y,x=rho_ref.shape
     crop_points=y-vertical_crop
+    ratio = crop_points/y
     density_abs = np.zeros((no_images,crop_points,x))
     #only taking the crop_points closest to the top to save
     for i in range(no_images):
@@ -303,7 +304,7 @@ def foreground_profile(foreground_path, background_data, density_locations, path
         save_name = 'run_{}_abs'.format(run)
         ani.save('{}/results/{}.mp4'.format(os.path.dirname(foreground_path[0]),save_name), dpi=250)
         
-    return density_abs
+    return density_abs, ratio
 
 def max_and_loc(data):
     '''
@@ -349,6 +350,7 @@ def topo_locator(density_abs,rho_bottom):
     topo_location : An array that has the average location (X Pixel) of tip of topography for each image in dataset
 
     '''
+    
     np.seterr(invalid='ignore')
     t,y,x=density_abs.shape
     topo_crop = y-450
@@ -437,7 +439,7 @@ def crop_centre(topo_location, field, rho_ref, vertical_crop, anom ='no'):
 
     
 
-def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, vertical_crop, fixed_anom, fixed_abs):
+def centred_field(topo_location, field, rho_ref, rho_top, rho_bottom, run, data_path, vertical_crop, plot_ratio, fixed_anom, fixed_abs):
     
     centre_rho = crop_centre(topo_location, field, rho_ref, vertical_crop)
 
@@ -457,8 +459,9 @@ def centred_field(topo_location, field, rho_ref, rho_top, run, data_path, vertic
             image=centre_rho[i]
             
             cmap = cmo.cm.dense
+            diff = rho_bottom-rho_top
             vmin=rho_top
-            vmax=rho_top+4
+            vmax=rho_top+diff*plot_ratio
                 
         
             im=plt.imshow(image, cmap=cmap, animated=True, vmin=vmin,vmax=vmax)

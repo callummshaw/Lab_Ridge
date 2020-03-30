@@ -50,7 +50,7 @@ def light_attenuation_analysis(run, excel_path, vertical_crop=1000, no_hills=1, 
     foreground_paths = askopenfilenames()
     length = len(foreground_paths)
     print(f'\n Analysing Short Term Density Variations For {length} Images')
-    density_profile = af.foreground_profile(foreground_paths, background_data, density_locations,excel_path, run, vertical_crop, moving_anom, moving_abs)
+    density_profile, plot_ratio = af.foreground_profile(foreground_paths, background_data, density_locations,excel_path, run, vertical_crop, moving_anom, moving_abs)
     print(density_profile.shape)
     exp_rho, depth = af.load_data(excel_path, run)
     
@@ -66,7 +66,7 @@ def light_attenuation_analysis(run, excel_path, vertical_crop=1000, no_hills=1, 
     topo_location = af.topo_locator(density_profile,rho_bottom)
     
     print('\n Centering Fields!')
-    data = af.centred_field(topo_location, density_profile, rho_ref, rho_top, run, foreground_paths[0], vertical_crop, fixed_anom, fixed_abs)
+    data = af.centred_field(topo_location, density_profile, rho_ref, rho_top, rho_bottom, run, foreground_paths[0], vertical_crop, plot_ratio, fixed_anom, fixed_abs)
     print(data.shape)
     print('\n Transforming data for Fourier Filtering')
     bottom_offset=15 #adjusting bottom cutoff of mask
