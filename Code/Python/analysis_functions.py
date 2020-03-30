@@ -158,15 +158,12 @@ def foreground_profile(foreground_path, background_data, density_locations, path
     zbot=int(np.round(density_locations[0][1]))
     ztop=int(np.round(density_locations[1][1]))
     
-    
     beta=background_data[0]
     bottom_ref=background_data[1]
     rho_ref=background_data[2]
     
-
-    crop_points=vertical_crop #how much you want to crop in vertical
     y,x=rho_ref.shape
-
+    crop_points=y-vertical_crop
     density_abs = np.zeros((no_images,crop_points,x))
     #only taking the crop_points closest to the top to save
     for i in range(no_images):
@@ -354,9 +351,14 @@ def topo_locator(density_abs,rho_bottom):
     '''
     np.seterr(invalid='ignore')
     t,y,x=density_abs.shape
+    topo_crop = y-450
+    
     topo_location=np.zeros(t)
     
-    density_abs[density_abs>rho_bottom-3]=np.nan #setting topo to nan
+    topo_dens = density_abs[:,topo_crop:,:]
+    topo_dens[topo_dens>rho_bottom-5]=np.nan #setting topo to nan
+    
+    density_abs[:,topo_crop:,:] = topo_dens
     
     for i in range(t):
         image=density_abs[i]
@@ -398,7 +400,7 @@ def crop_centre(topo_location, field, rho_ref, vertical_crop, anom ='no'):
     '''
 
     t,y,x=field.shape
-    
+    crop_points=y-vertical_crop
     right = int(x-max(topo_location))
     left = int(min(topo_location))    
     
@@ -411,7 +413,7 @@ def crop_centre(topo_location, field, rho_ref, vertical_crop, anom ='no'):
             image=field[j]
             
             cropped_image=image[:,int(topo-left):int(topo+right)]
-            cropped_ref=rho_ref[:vertical_crop,int(topo-left):int(topo+right)]
+            cropped_ref=rho_ref[:crop_points,int(topo-left):int(topo+right)]
             
             delta=cropped_image-cropped_ref
             cropped_field[j] = delta
