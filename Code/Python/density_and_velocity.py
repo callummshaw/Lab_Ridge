@@ -143,9 +143,9 @@ def light_attenuation_analysis(run, excel_path, vertical_crop=1000, no_hills=1, 
     print('\n Filtering Finished')
     
     print('\n Now calculating W')
-
+    time_scale = 0.125
     scale=-g/(rho_0*buoyancy_freq**2)
-    w = scale*np.gradient(result-1000,axis=0)
+    w = scale*np.gradient(result-rho_0,time_scale,axis=0)
 
     if w_vel == 'yes':
         print('\n Plotting W')
@@ -153,4 +153,4 @@ def light_attenuation_analysis(run, excel_path, vertical_crop=1000, no_hills=1, 
     
     if u_vel == 'yes':
         print('Warning!! Not Yet Finished')
-    
+    np.save('vertical_test',w)
