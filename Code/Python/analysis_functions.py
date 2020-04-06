@@ -15,7 +15,7 @@ import os.path
 import cv2
 import matplotlib.animation as animation
 import cmocean as cmo
-import sys
+from numpy import fft
 
       
 class background:
@@ -110,31 +110,31 @@ class foreground:
         
 class topography:
     
-    def __init__(self,no_hills,f_d,b_d):
+    def __init__(self,no_hills):
+        
         bottom_offset=15
         lensing=33
         
         self.no_hills = no_hills
         self.bottom_offset = bottom_offset
         self.lensing = lensing
-        self.rho_bottom = b_d.rho_bottom
-        self.density_abs = f_d.density_abs
+      
         
-    def topo_locator(self):
+    def topo_locator(self,density_abs,rho_bottom):
         np.seterr(invalid='ignore')
-        t,y,x=self.density_abs.shape
+        t,y,x=density_abs.shape
         
         topo_crop = y-450 #cropping data to isolate topography
     
         topo_location=np.zeros(t)
     
-        topo_dens = self.density_abs[:,topo_crop:,:]
-        topo_dens[topo_dens>self.rho_bottom-5]=np.nan #setting topo to nan
+        topo_dens = density_abs[:,topo_crop:,:]
+        topo_dens[topo_dens>rho_bottom-5]=np.nan #setting topo to nan
         
-        self.density_abs[:,topo_crop:,:] = topo_dens
+        density_abs[:,topo_crop:,:] = topo_dens
         
         for i in range(t):
-            image=self.density_abs[i]
+            image=density_abs[i]
             
             nan_count=np.float32(np.sum(np.isnan(image),axis=0)) #summing the Nans in the vertical direction
             max_nan =  np.max((np.sum(np.isnan(image),axis=0)))
@@ -156,8 +156,42 @@ class topography:
         plt.ylabel('Topography Location (X-Pixel)')
         plt.pause(5)
         
-    def topo_mask(self):
-        fdsf
+class fourier_filter:
+    
+    def __init__(self,sigma, shape):
+        self.sigma = sigma
+        self.t = shape[0]
+        self.z = shape[1]
+        self.t = shape[2]
+    
+    def transformed_coords(self,topo_function):
+        #creating data used in transform
+        x_array = np.arange(self.x)
+        z_array = np.arange(self.z)
+        xx,zz=np.meshgrid(x_array,z_array)
+        
+        zt=np.zeros((self.z,self.x)) #where we are storing the transformed z coordinate
+        
+        for i in range(self.x):
+            topo=topo_function[i]
+            transformed_array=self.z*(zz[:,i]-topo)/(-topo) #function
+            zt[:,i]=-np.round(transformed_array)+self.z
+        
+        self.zt = zt
+    
+    def low_pass_filter(self):
+        ratio=.8
+        mu=0
+        
+        x_fft = np.fft.fftfreq(self.x-2)
+        z_fft = np.fft.fftfreq(self.z-2)
+
+        x_filt =np.exp(-(x_fft-mu)**2/(2*(ratio*self.sigma)**2))
+        z_filt =np.exp(-(z_fft-mu)**2/(2*self.sigma**2))
+
+        filt = x_filt*z_filt[:,None]
+    
+        self.filt = filt
         
 def foreground_profile(b_d, f_d, vertical_crop, moving_anom = 'no', moving_abs = 'no'):
     '''
@@ -500,6 +534,7 @@ def centred_field(t_d, b_d, f_d, vertical_crop, fixed_anom, fixed_abs):
 
                     
 def topograghy_mask(t_d, f_d):
+    
     '''
     A function that reads in a dataset and returns a function that can be used to mask
     the topography (needed for fourier transform)
@@ -549,7 +584,7 @@ def topograghy_mask(t_d, f_d):
         plt.pause(5)
         
         t_d.topo_function = topo_function
-        f_d.cropped_centre = rho_c
+        f_d.centre_rho = rho_c #updating rho
         
     if t_d.no_hills == 2:
         
@@ -586,85 +621,66 @@ def topograghy_mask(t_d, f_d):
         plt.pause(5)
         
         t_d.topo_function = topo_function
-        f_d.cropped_centre = rho_c
+        f_d.centre_rho = rho_c
 
-def transformed_coords(data, topography_mask):
-    '''
-    A function that calculates the transformed coordinates needed to mask the 
-    the topography
-
-    Parameters
-    ----------
-    data : Data that is being transformed
-    Topogrpahy Function
-
-    Returns
-    -------
-    zt : The transformed array, that contains the z' coordinates
-
-    '''
-
-    
-    
-    t,z,x=data.shape
-    
-    #creating data used in transform
-    x_array = np.arange(x)
-    z_array = np.arange(z)
-    xx,zz=np.meshgrid(x_array,z_array)
-    
-    zt=np.zeros((z,x)) #where we are storing the transformed z coordinate
-    
-    for i in range(x):
-        topo=topography_mask[i]
-        transformed_array=z*(zz[:,i]-topo)/(-topo) #function
-        zt[:,i]=-np.round(transformed_array)+z
+def fourier_filter_and_trans(f_d,l_d,i):
         
-  
-    return zt
-
-def low_pass_filter(z,x,sigma=0.05,mu=0):
-    '''
-    Simple function that generates a low pass filter (using a gaussian)
-
-    Parameters
-    ----------
-    z : height of array
-    y : length of array
-    sigma : As this uses a guassian filter sigma is width of gaussian which
-            coresponds to the strength of filter. The default is 0.1.
-    mu : The mean of the gaussian. The default is 0.
-
-    Returns
-    -------
-    filt : Returns a 2d array containing the low pass filter
-
-    '''
-    ratio=.8
+        data = f_d.centre_rho[i]
+        trans_dummy = np.zeros((l_d.z,l_d.x)) #variable to store date during transform
+        
+        #applying the transform on the data
+        for k in range(l_d.x):
+                for j in range(l_d.z):
+                    wanted_data=data[j,k]
+                    z_loc = int(l_d.zt[j,k])
+                    if z_loc<l_d.z:
+                        trans_dummy[z_loc,k]=wanted_data
+        
+        trans_dummy[trans_dummy==0]=np.nan
+        
+        #now interpolating data
+        dummy_frame = pd.DataFrame(trans_dummy)
+        dummy_int = dummy_frame.interpolate()
+        dummy_int = dummy_int.values
+        cropped = dummy_int[1:-1,1:-1]
+        z_prime_c=l_d.zt[1:-1,1:-1]
+        
+        
+                
+        fft_data = fft.fft2(cropped) #preforming fft
+        filtered_data = fft_data*l_d.filt #filtering
+        ifft_data = fft.ifft2(filtered_data) #going back to cartesian space
+        
+        filt_d = np.float32(ifft_data.real)
     
-    x_fft = np.fft.fftfreq(x)
-    z_fft = np.fft.fftfreq(z)
+        filt_dummy = np.zeros(filt_d.shape)
+        
+        z,x=filt_d.shape
+        
+        for k in range(x): 
+            for j in range(z):
+                z_val = z_prime_c[j,k]
+                if z_val < z-1:
+                    filt_dummy[j,k]=filt_d[int(z_val),k]
+                    
+        filt_dummy=np.float32(filt_dummy)
+        filt_dummy[filt_dummy==0]=np.nan
+        
+        return(filt_dummy)       
 
-    x_filt =np.exp(-(x_fft-mu)**2/(2*(ratio*sigma)**2))
-    z_filt =np.exp(-(z_fft-mu)**2/(2*sigma**2))
-
-    filt = x_filt*z_filt[:,None]
+def plot_w(b_d,f_d):
     
-    return filt
-
-def plot_w(data, run, path):
-    
-    if not os.path.exists('{}/results'.format(os.path.dirname(path))):
-        os.makedirs('{}/results'.format(os.path.dirname(path)))
+    if not os.path.exists('{}/results'.format(f_d.save_path)):
+        os.makedirs('{}/results'.format(f_d.save_path))
     
     ims=[]
     fig = plt.figure(figsize=(10,5))
     
-    t,y,x=data.shape
+    t,y,x=f_d.wvel.shape
     
     for i in range(t):
         
-        image=data[i]
+        image=f_d.wvel[i]
         
         cmap = cmo.cm.balance
         vmin=-5e-4
@@ -672,7 +688,7 @@ def plot_w(data, run, path):
             
     
         im=plt.imshow(image, cmap=cmap, animated=True, vmin=vmin,vmax=vmax)
-        title = 'Run {}- Vertical Velocity'.format(run)
+        title = 'Run {}- Vertical Velocity'.format(b_d.run)
         plt.title(title, fontsize=20)
         
         plt.xlabel('Length (m)')
@@ -694,6 +710,6 @@ def plot_w(data, run, path):
     print('Saving!')
     
     writer = animation.writers['ffmpeg']
-    save_name = 'run_{}_w_vel'.format(run)
-    ani.save('{}/results/{}.mp4'.format(os.path.dirname(path),save_name), dpi=250)
+    save_name = 'run_{}_w_vel'.format(b_d.run)
+    ani.save('{}/results/{}.mp4'.format(f_d.save_path,save_name), dpi=250)
 
