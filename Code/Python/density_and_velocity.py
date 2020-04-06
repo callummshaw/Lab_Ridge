@@ -16,71 +16,67 @@ from multiprocessing.pool import ThreadPool as Pool
 import pandas as pd
 from numpy import fft
 
+from analysis_functions import background, foreground, topography
 
 
 excel_path='E:/records.xlsx'
 run = 8 
 
-def light_attenuation_analysis(run, excel_path, vertical_crop=1000, no_hills=1, sigma=0.005, moving_anom = 'no', moving_abs = 'no', fixed_anom = 'no', fixed_abs = 'no', w_vel = 'no', u_vel = 'no'):
-    exp_rho, depth = af.load_data(excel_path, run)
+
+
+def light_attenuation_analysis( vertical_crop=1000, no_hills=1, sigma=0.005, moving_anom = 'no', moving_abs = 'no', fixed_anom = 'no', fixed_abs = 'no', w_vel = 'no', u_vel = 'no'):
+  
     #Analysing background image
     print('\n Select Background Image')
-    background_path = askopenfilename() 
-    b_image = cv2.imread(background_path,0)
+    background_path = askopenfilename()
+    b_d = background(run,excel_path, background_path)
+    b_d.load_data()
     
     while True:
         #choosing region that you want (cropping photo to just show water)
-        plt.figure()
-        plt.title('Choose Area to Average over- Top then bottom')
-        plt.axis('off')
-        plt.imshow(b_image, cmap='gist_gray')
-        density_locations = plt.ginput(2)
-
-        depth_array, background_data = af.background_analysis(b_image, density_locations, exp_rho, depth)
- 
+        b_d.plot_raw()
+        b_d.density_profile()
+        b_d.density_plot()
         
         ok = int(input(' Happy with background density? 1 for yes, 2 for no: '))
+        
         if ok == 2:
             print('\n Please redo cropping region')
         if ok == 1:
             break
-        
+ 
     
     print('\n Select Foreground Images')
     foreground_paths = askopenfilenames()
-    length = len(foreground_paths)
-    print(f'\n Analysing Short Term Density Variations For {length} Images')
-    density_profile, plot_ratio = af.foreground_profile(foreground_paths, background_data, density_locations,excel_path, run, vertical_crop, moving_anom, moving_abs)
-
-    exp_rho, depth = af.load_data(excel_path, run)
+    f_d = foreground(foreground_paths)
     
-    rho_bottom=exp_rho[0]
-    rho_top=exp_rho[1]
-    rho_ref=background_data[2]
+    print(f'\n Analysing Short Term Density Variations For {f_d.no_images} Images')
+    af.foreground_profile(b_d, f_d, vertical_crop, moving_anom, moving_abs)
     
-    g=9.81
-    rho_0 = 1000
-    buoyancy_freq = np.sqrt(g/rho_0*(rho_bottom-rho_top)/depth)
-   
     print('\n Finding background topography')
-    topo_location = af.topo_locator(density_profile,rho_bottom)
+    t_d = topography(no_hills, f_d, b_d)
+    t_d.topo_locator()
+    t_d.topo_location_plot()
     
     print('\n Centering Fields!')
-    data = af.centred_field(topo_location, density_profile, rho_ref, rho_top, rho_bottom, run, foreground_paths[0], vertical_crop, plot_ratio, fixed_anom, fixed_abs)
+    af.centred_field(t_d, b_d, f_d, vertical_crop, fixed_anom, fixed_abs)
    
     print('\n Transforming data for Fourier Filtering')
-    bottom_offset=15 #adjusting bottom cutoff of mask
-    lensing = 33 #adjusting width of mask
+    
     while True:
         #choosing region that you want (cropping photo to just show water)
-        topo_mask, cropped_data = af.topograghy_mask(data, no_hills, bottom_offset=bottom_offset, lensing=lensing)
+        af.topograghy_mask(t_d,f_d)
         ok = int(input(' Happy with topography mask? 1 for yes, 2 for no: '))
+        
         if ok == 2:
-            lensing = int(input(f' New Lensing Value (Previous was {lensing}): '))
-            bottom_offset = int(input(f' New Bottom Offset Value (Previous was {bottom_offset}): '))
+            lensing = int(input(f' New Lensing Value (Previous was {t_d.lensing}): '))
+            bottom_offset = int(input(f' New Bottom Offset Value (Previous was {t_d.bottom_offset}): '))
+            
+            t_d.lensing = lensing
+            t_d.bottom_offset = bottom_offset
         if ok == 1:
             break
-    
+    return('Test complete')
     z_prime = af.transformed_coords(cropped_data, topo_mask)
     t,z,x=cropped_data.shape
 
