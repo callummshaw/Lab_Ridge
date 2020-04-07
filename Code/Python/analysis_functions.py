@@ -19,7 +19,10 @@ from numpy import fft
 
       
 class background:
-    
+    '''
+    A class for all the background info: initialises with run number, excel path, background picture,
+    background picture path.
+    '''
     def __init__(self, run,excel_path,picture_path):
         self.run = run
         self.excel_path = excel_path
@@ -206,7 +209,8 @@ def foreground_profile(b_d, f_d, vertical_crop, moving_anom = 'no', moving_abs =
 
     Returns
     -------
-    Density data
+    Density data in class f_d
+    Ratio of vertical crop (used for plot limits) in class f_d
 
     '''
     np.seterr(divide='ignore')
@@ -374,14 +378,15 @@ def max_and_loc(data):
                     
 
 
-def crop_centre(t_d, b_d, vertical_crop, anom ='no'):
+def crop_centre(t_d, f_d, b_d, vertical_crop, anom ='no'):
     '''
 
     Parameters
     ----------
-    topo_location : An array that has the average location (X Pixel) of tip of topography for each image in dataset
-    field : Dataset that we are cropping (either density abs or density anom)
-    rho_ref : Dataset that that has the background density
+    t_d : topography data
+    f_d : foreground data
+    b_d : background data
+    vertical_crop : desired vertical crop
     fixed_anom :  Generate data for anom
 
     Returns
@@ -391,7 +396,7 @@ def crop_centre(t_d, b_d, vertical_crop, anom ='no'):
 
     '''
 
-    t,y,x=t_d.density_abs.shape
+    t,y,x=f_d.density_abs.shape
     crop_points=y-vertical_crop
     right = int(x-max(t_d.topo_location))
     left = int(min(t_d.topo_location))    
@@ -402,7 +407,7 @@ def crop_centre(t_d, b_d, vertical_crop, anom ='no'):
         for j in range(t):
             topo=int(t_d.topo_location[j])
             
-            image=t_d.density_abs[j]
+            image=f_d.density_abs[j]
             
             cropped_image=image[:,int(topo-left):int(topo+right)]
             cropped_ref=b_d.rho_ref[:crop_points,int(topo-left):int(topo+right)]
@@ -417,7 +422,7 @@ def crop_centre(t_d, b_d, vertical_crop, anom ='no'):
         for j in range(t):
             topo=int(t_d.topo_location[j])
             
-            image=t_d.density_abs[j]
+            image=f_d.density_abs[j]
             
             cropped_image=image[:,int(topo-left):int(topo+right)]
             
@@ -430,7 +435,7 @@ def crop_centre(t_d, b_d, vertical_crop, anom ='no'):
 
 def centred_field(t_d, b_d, f_d, vertical_crop, fixed_anom, fixed_abs):
     
-    centre_rho = crop_centre(t_d, b_d, vertical_crop)
+    centre_rho = crop_centre(t_d, f_d, b_d, vertical_crop)
     
     f_d.centre_rho = centre_rho
     
