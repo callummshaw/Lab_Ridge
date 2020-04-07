@@ -693,13 +693,14 @@ def plot_w(b_d,f_d):
     fig = plt.figure(figsize=(10,5))
     
     t,y,x=f_d.wvel.shape
+    minimum = np.nanmin(f_d.wvel)
     
     for i in range(t):
         
         image=f_d.wvel[i]
         
         cmap = cmo.cm.balance
-        vmin=-5e-4
+        vmin=minimum
         vmax=-vmin
             
     
