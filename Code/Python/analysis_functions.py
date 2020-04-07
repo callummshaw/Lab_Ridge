@@ -161,11 +161,11 @@ class topography:
         
 class fourier_filter:
     
-    def __init__(self,sigma, shape):
+    def __init__(self, sigma, shape):
         self.sigma = sigma
         self.t = shape[0]
         self.z = shape[1]
-        self.t = shape[2]
+        self.x = shape[2]
     
     def transformed_coords(self,topo_function):
         #creating data used in transform
@@ -195,7 +195,18 @@ class fourier_filter:
         filt = x_filt*z_filt[:,None]
     
         self.filt = filt
-        
+
+class velocities:
+    
+    def __init__(self, wvel):
+        self.wvel = wvel
+
+    def topography_transform(self, topography):
+        d_topo = np.grandient(topography)
+        self.d_topo = d_topo
+
+
+      
 def foreground_profile(b_d, f_d, vertical_crop, moving_anom = 'no', moving_abs = 'no'):
     '''
     

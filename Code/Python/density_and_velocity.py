@@ -4,11 +4,14 @@ Created on Mon Mar 23 15:26:53 2020
 
 @author: Callum Shaw
 
-A program that will do everything all in one.
+A program that will do everything all in one. Just update the run number and
+excel spreadsheet path if changed and then run light_attenuation_analysis(), with 
+the desired videos set to 'yes'
 """
 import analysis_functions as af
 from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import askopenfilenames
+from functools import partial
 import numpy as np
 from multiprocessing.pool import ThreadPool as Pool
 
@@ -18,8 +21,6 @@ from analysis_functions import background, foreground, topography, fourier_filte
 
 excel_path='E:/records.xlsx'
 run = 8 
-
-
 
 def light_attenuation_analysis( vertical_crop=1000, no_hills=1, sigma=0.005, moving_anom = 'no', moving_abs = 'no', fixed_anom = 'no', fixed_abs = 'no', w_vel = 'no', u_vel = 'no'):
   
@@ -52,7 +53,7 @@ def light_attenuation_analysis( vertical_crop=1000, no_hills=1, sigma=0.005, mov
     
     print('\n Finding background topography')
     t_d = topography(no_hills)
-    t_d.topo_locator(f_d.density_abs, b_d.bottom_rho)
+    t_d.topo_locator(f_d.density_abs, b_d.rho_bottom)
     t_d.topo_location_plot()
     
     print('\n Centering Fields!')
@@ -72,18 +73,19 @@ def light_attenuation_analysis( vertical_crop=1000, no_hills=1, sigma=0.005, mov
             t_d.bottom_offset = bottom_offset
         if ok == 1:
             break
-    return('Test complete')
    
-    shape = f_d.centre_rho
+    shape = f_d.centre_rho.shape
     l_d = fourier_filter(sigma, shape)
     l_d.transformed_coords(t_d.topo_function)
+    l_d.low_pass_filter()
     
     print('\n Now filtering Data')
 
     if __name__ == '__main__':
           numbers=range(l_d.t)
           p = Pool()
-          result = p.map(af.fourier_filter_and_trans, numbers)
+          func = partial(af.fourier_filter_and_trans, f_d, l_d)
+          result = p.map(func, numbers)
           p.close()
           p.join()
           
