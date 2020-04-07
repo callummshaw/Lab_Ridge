@@ -202,9 +202,37 @@ class velocities:
         self.wvel = wvel
 
     def topography_transform(self, topography):
-        d_topo = np.grandient(topography)
+        d_topo = np.gradient(topography)
         self.d_topo = d_topo
-
+        self.topo = topography
+        
+    def transform_w(self, transform, i):
+        
+        data = self.wvel[i]
+        
+        trans_dummy = np.zeros((data.shape)) #variable to store date during transform
+        
+        z,x = data.shape
+        #applying the transform on the data
+        for k in range(x):
+                for j in range(z):
+                    wanted_data=data[j,k]
+                    z_loc = int(transform[j,k])
+                    if z_loc<z:
+                        trans_dummy[z_loc,k]=wanted_data
+        
+        trans_dummy[trans_dummy==0]=np.nan
+        
+        #now interpolating data
+        dummy_frame = pd.DataFrame(trans_dummy)
+        dummy_int = dummy_frame.interpolate()
+        dummy_int = dummy_int.values
+        
+        cropped = dummy_int[1:-1,1:-1] #removing boundary nan's
+        deriv = np.gradient(cropped, axis=0)
+        
+        return deriv
+    
 
       
 def foreground_profile(b_d, f_d, vertical_crop, moving_anom = 'no', moving_abs = 'no'):
