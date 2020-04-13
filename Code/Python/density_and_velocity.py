@@ -105,22 +105,8 @@ def light_attenuation_analysis( vertical_crop=1000, no_hills=1, sigma=0.005, mov
     scale=-g/(rho_0*b_d.b_freq**2)
     
     v_d=velocities(scale*np.gradient(f_d.filtered_rho-rho_0, time_scale,axis=0))
-    v_d.topography_transform(t_d.topotopo_function)
-    
-    if __name__ == '__main__':
-        numbers=range(v_d.wvel.shape[0])
-        
-        p = Pool()
-        
-        func = partial(v.transform_w, trans)
-        result = p.map(func, numbers)
-        p.close()
-        p.join()
-        
-        result=np.dstack(result)
-        result = np.moveaxis(result,2,0)
-        
-        v.transformed = result
+    v_d.topography_remove(t_d.topo_function)
+    v_d.horizontal_velocity
         
     if w_vel == 'yes':
         print('\n Plotting W')

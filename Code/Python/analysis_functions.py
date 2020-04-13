@@ -201,38 +201,18 @@ class velocities:
     def __init__(self, wvel):
         self.wvel = wvel
 
-    def topography_transform(self, topography):
-        d_topo = np.gradient(topography)
-        self.d_topo = d_topo
-        self.topo = topography
+    def topography_remove(self, topography):
+        topo_max = int(min(topography))
+        self.wvel_crop = self.wvel[:,:topo_max-5,:]
+        self.dwdz = np.gradient(self.wvel_crop, axis=1)
         
-    def transform_w(self, transform, i):
-        
-        data = self.wvel[i]
-        
-        trans_dummy = np.zeros((data.shape)) #variable to store date during transform
-        
-        z,x = data.shape
-        #applying the transform on the data
-        for k in range(x):
-                for j in range(z):
-                    wanted_data=data[j,k]
-                    z_loc = int(transform[j,k])
-                    if z_loc<z:
-                        trans_dummy[z_loc,k]=wanted_data
-        
-        trans_dummy[trans_dummy==0]=np.nan
-        
-        #now interpolating data
-        dummy_frame = pd.DataFrame(trans_dummy)
-        dummy_int = dummy_frame.interpolate()
-        dummy_int = dummy_int.values
-        
-        cropped = dummy_int[1:-1,1:-1] #removing boundary nan's
-        deriv = np.gradient(cropped, axis=0)
-        
-        return deriv
-    
+    def horizontal_velocity(self):
+        f_dwdz = fft.fft(self.dwdz, axis=-1)
+        n=self.dwdz.shape[2]
+        k = fft.fftfreq(n)
+        f_u = -f_dwdz/(1j*k)
+        u = fft.ifft(f_u[:,:,1:], axis=-1)
+        self.u = np.real(u)
 
       
 def foreground_profile(b_d, f_d, vertical_crop, moving_anom = 'no', moving_abs = 'no'):
