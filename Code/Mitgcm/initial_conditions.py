@@ -8,6 +8,8 @@ script
 import numpy as np
 
 #background constants
+save_location= '/g/data/nm03/mitgcm/input/'
+
 data_type = '>f8'
 
 alpha_t = 2e-4
@@ -36,7 +38,7 @@ X, Z = np.meshgrid(x,z)
 dtdz = n2/(alpha_t*g)
 T = dtdz*(Z+hz)
 
-save_name ='Tinit_N2_3e6.field'
+save_name ='{}Tinit_N2_3e6.field'.format(save_location)
 T.astype(data_type).tofile(save_name)
 
 #Initial Velocity
@@ -46,7 +48,7 @@ F0=1e-6
 u0=omega0/(f0**2-omega0**2)*F0
 u_init = u0*(X*0+1)
 
-save_name = 'uinit_super.field'
+save_name = '{}uinit_super.field'.format(save_location)
 u_init.astype(data_type).tofile(save_name)
 
 # Making hills
@@ -61,6 +63,6 @@ hill_heights=[200, 350, 500, 650,]#desired hill heights
 for i in hill_heights:
     h = H+h1*i
     
-    save_name = f'very_big_topo_h{i}.field'
+    save_name = '{}very_big_topo_h{}.field'.format(save_location, i)
     h.astype(data_type).tofile(save_name)
 
