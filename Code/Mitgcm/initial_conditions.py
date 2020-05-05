@@ -8,7 +8,11 @@ script
 import numpy as np
 
 #background constants
-save_location= '/g/data/nm03/mitgcm/input/'
+width=8000
+
+hill_heights=[200, 250, 300, 350, 400]#desired hill heights
+
+save_location= ''
 
 data_type = '>f8'
 
@@ -17,7 +21,7 @@ g = 9.81
 n2 = 3e-6
 
 #grid size
-nx = 1024
+nx = 2048
 ny = 1
 nz = 2000
 
@@ -52,13 +56,9 @@ save_name = '{}uinit_super.field'.format(save_location)
 u_init.astype(data_type).tofile(save_name)
 
 # Making hills
-h1=np.cos(np.pi*(x-lx/2)/lx)**2
-h1=h1-np.mean(h1)
-h1=h1/np.std(h1) 
-h1=h1-np.min(h1) 
-
-H=np.min(z)
-hill_heights=[200, 350, 500, 650,]#desired hill heights
+c=width/(2*np.sqrt(2*np.log(2))) #fwhm
+h1 = np.exp(-(x-lx/2)**2/(c**2))
+H=-hz
 
 for i in hill_heights:
     h = H+h1*i
