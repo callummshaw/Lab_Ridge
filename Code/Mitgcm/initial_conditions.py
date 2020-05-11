@@ -26,15 +26,35 @@ ny = 1
 nz = 2000
 
 #grid lengths
-lx = 100e3
 hz = 3000
+dx = np.zeros(nx)
+
+outer_space = 80
+inner_space = 20
+delta_space = outer_space-inner_space
+
+outer_region = 450
+inner_region = 550
+delta_region = inner_region-outer_region
 
 #grid arrays
 z = -np.linspace(0,hz,nz+1)
 z = (z[:-1]+z[1:])/2
 
-x = np.linspace(0,lx,nx+1)
-x = (x[:-1]+x[1:])/2
+
+dx[:outer_region]=outer_space
+dx[-outer_region:]=outer_space
+dx[inner_region:-inner_region]=inner_space
+
+delta = (np.arange(delta_region)+1)/delta_region
+dx[outer_region:inner_region] = delta_space*delta[::-1]+inner_space
+dx[-inner_region:-outer_region] = delta_space*delta+inner_space
+
+x = np.cumsum(dx)-outer_space
+lx = x[-1]
+
+save_name ='{}dx'.format(save_location)
+dx.astype(data_type).tofile(save_name)
 
 X, Z = np.meshgrid(x,z)
 
